@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2037
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mjolnir", "Mjolnir\Mjolnir.csproj", "{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mjolnir", "Mjolnir\Mjolnir.csproj", "{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Discord", "Discord\Discord.csproj", "{C476B8C3-DF69-4527-B557-2240740E32EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MjolnirCore", "MjolnirCore\MjolnirCore.csproj", "{92B476A6-F1A9-4E28-A0A5-AE8573BCEE8D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C476B8C3-DF69-4527-B557-2240740E32EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C476B8C3-DF69-4527-B557-2240740E32EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C476B8C3-DF69-4527-B557-2240740E32EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C476B8C3-DF69-4527-B557-2240740E32EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92B476A6-F1A9-4E28-A0A5-AE8573BCEE8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92B476A6-F1A9-4E28-A0A5-AE8573BCEE8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92B476A6-F1A9-4E28-A0A5-AE8573BCEE8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92B476A6-F1A9-4E28-A0A5-AE8573BCEE8D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
