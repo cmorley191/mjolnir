@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2037
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mjolnir", "Mjolnir\Mjolnir.csproj", "{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF634177-A62F-4BBE-85D3-FDD9AAAD6739}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0C2A0238-8BF1-4EF1-8969-5537515D7724}
+	EndGlobalSection
+EndGlobal
