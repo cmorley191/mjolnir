@@ -47,7 +47,7 @@ type Overwrite =
     let intermed = JsonConvert.DeserializeObject<OverwriteJson>(str, opts)
     intermed.ToReal ()
 
-  member this.Serialize =
+  member this.Serialize () =
     let opts = Serialisation.extend (JsonSerializerSettings())
     let intermed = OverwriteJson.FromReal this
     JsonConvert.SerializeObject(intermed, opts)

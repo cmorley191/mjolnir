@@ -1,6 +1,7 @@
 ﻿module Mjolnir.Core.Option
 
 open System
+open System.Runtime.InteropServices
 
 let map f (o:'a option) : 'b option =
   if o.IsNone then
@@ -8,12 +9,27 @@ let map f (o:'a option) : 'b option =
   else
     o.Value |> f |> Some
 
-let fromNullable (o:Nullable<'a>) : 'a option =
-  if o.HasValue then
-    Some o.Value
-  else None
+let ofNullType (o:'a) : 'a option when 'a : null =
+  if o = null then
+    None
+  else Some o
 
-let toNullable (o:'a option) : Nullable<'a> =
-  if o.IsSome then
-    o.Value |> Nullable
-  else null |> Nullable
+let toNullType (o:'a option) : 'a =
+  if o.IsNone then
+    null
+  else o.Value
+
+// Source: http://www.fssnip.net/so/title/Make-option-type-usable-in-C
+let IsSome o =
+  match o with
+  | Some _ -> true
+  | None -> false
+let IsNone o = not <| IsSome o
+let TryGetValue o ([<Out>] value: byref<'t>) =
+  match o with
+  | Some v -> 
+    value <- v
+    true
+  | None ->
+    value <- Unchecked.defaultof<'t>
+    false

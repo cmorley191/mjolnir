@@ -52,7 +52,7 @@ type User =
     let intermed = JsonConvert.DeserializeObject<UserJson>(str, opts)
     intermed.ToReal ()
 
-  member this.Serialize =
+  member this.Serialize () =
     let opts = Serialisation.extend (JsonSerializerSettings())
     let intermed = UserJson.FromReal this
     JsonConvert.SerializeObject(intermed, opts)

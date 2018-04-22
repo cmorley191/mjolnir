@@ -27,7 +27,12 @@ namespace Discord {
       message.Headers.Add("User-Agent", "DiscordBot (https://github.com/cmorley191/mjolnir, v1.0.0)");
 
       var response = await client.SendAsync(message);
-      return await response.Content.ReadAsStringAsync();
+      var responseString = await response.Content.ReadAsStringAsync();
+
+      if (!response.IsSuccessStatusCode)
+        throw new Exception($"{response.StatusCode}: {responseString}");
+
+      return responseString;
     }
   }
 }

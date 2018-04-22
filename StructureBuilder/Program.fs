@@ -2,6 +2,7 @@
 open System.Text.RegularExpressions
 open System.IO
 open MjolnirCore
+open System.Linq
 
 let capitalize (s:string) = s.[0].ToString().ToUpper() + s.Substring(1)
 
@@ -11,6 +12,7 @@ type Item =
     DiscordType: string
     Description: string
     ArrayType: string option
+    ObjectType: string option
     JsonName: string
     JsonType: string
     ToRealCode: string
@@ -20,6 +22,12 @@ type Item =
   }
 
   static member Construct [fieldname:string; fieldtype:string; description:string] =
+    let torealname n =
+      if n = "``type``" then "Type" else
+      n.Split([|'_'; ' '|])
+      |> Array.map capitalize
+      |> String.concat ""
+
     let (name, optional) = 
       let handleOptional (n:string, o) =
         if n.EndsWith "?" then
@@ -29,9 +37,14 @@ type Item =
         if n = "type" then
           ("``type``", o)
         else (n, o)
+      let handleAsterisk (n:string, o) =
+        if n.EndsWith("*") then
+          (n.Substring(0, n.Length - 1), o)
+        else (n, o)
 
-      (fieldname, true)
+      (fieldname, false)
       |> handleOptional
+      |> handleAsterisk
       |> handleTypeName
 
     let (``type``, nullable) =
@@ -39,18 +52,27 @@ type Item =
         (fieldtype.Substring(1), true)
       else (fieldtype, false)
 
+    let realname = torealname name
 
-    let realname =
-      if name = "``type``" then "Type" else
-      name.Split([|'_'|])
-      |> Array.map capitalize
-      |> String.concat ""
-
-    let arraytype = 
-      let arraypattern = "array\sof\s([^\\s]*)\sobjects"
+    let idarraytype =
+      let arraypattern = "^array\sof\s(.*)\sobject\sids$"
       if Regex.IsMatch(``type``, arraypattern) then
         let match_ = Regex.Match(``type``, arraypattern)
-        Some (match_.Groups.[1].ToString() |> capitalize)
+        Some (match_.Groups.[1].ToString() |> torealname)
+      else None
+
+    let arraytype = 
+      let arraypattern = "^array\sof\s(.*)\sobjects$"
+      if Regex.IsMatch(``type``, arraypattern) then
+        let match_ = Regex.Match(``type``, arraypattern)
+        Some (match_.Groups.[1].ToString() |> torealname)
+      else None
+
+    let objecttype =
+      let objectpattern = "^(.*)\sobject$"
+      if arraytype.IsNone && Regex.IsMatch(``type``, objectpattern) then
+        let match_ = Regex.Match(``type``, objectpattern)
+        Some (match_.Groups.[1].ToString() |> torealname)
       else None
 
     {
@@ -58,6 +80,7 @@ type Item =
       DiscordType = fieldtype
       Description = description
       ArrayType = arraytype
+      ObjectType = objecttype
       JsonName = name
 
       JsonType = 
@@ -65,17 +88,25 @@ type Item =
         let handleSnowflake t = if t = "snowflake" then "string" else t
         let handleInteger t = if t = "integer" then "int" else t
         let handleDatetime t = if t = "ISO8601 timestamp" then "string" else t
-        let handleArray (t:string) = if t.StartsWith("array of") then "JArray" else t
+        let handleIdArray t = if idarraytype.IsSome then "JArray" else t
+        let handleObject t = if objecttype.IsSome then (sprintf "%sJson" objecttype.Value) else t
+        let handleArray (t:string) = if arraytype.IsSome then "JArray" else t
 
         ``type``
         |> handleSnowflake
         |> handleInteger
         |> handleDatetime
+        |> handleIdArray
         |> handleArray
+        |> handleObject
         |> handleOptional
 
       ToRealCode =
         let modifiers =
+          let handleNullable m =
+            if nullable then
+              "Option.ofNullType" :: (m |> List.map (fun m -> "Option.map (" + m + ")"))
+            else m
           let handleOptional m = 
             if optional then 
               m |> List.map (fun m -> "Option.map (" + m + ")")
@@ -85,6 +116,14 @@ type Item =
             if ``type`` = "ISO8601 timestamp" then
               "fun s -> DateTime.Parse(s, null, System.Globalization.DateTimeStyles.RoundtripKind)" :: m
             else m
+          let handleIdArray m =
+            if idarraytype.IsSome then
+              "fun jarr -> jarr.Values() |> Seq.map (fun x -> x.ToString() |> snowflake) |> Seq.toArray" :: m
+            else m
+          let handleObject m =
+            if objecttype.IsSome then
+              "(fun x -> x.ToReal())" :: m
+            else m
           let handleArray m = 
             if arraytype.IsSome then
               (sprintf "fun jarr -> jarr.Values() |> Seq.map (fun x -> x.ToString() |> %s.Deserialize) |> Seq.toArray" arraytype.Value) :: m
@@ -92,16 +131,23 @@ type Item =
 
           ([]:string list)
           |> handleArray
+          |> handleObject
           |> handleSnowflake
           |> handleDatetime
+          |> handleIdArray
+          |> handleNullable
           |> handleOptional
-          |> Seq.map (fun m -> " |> " + m)
+          |> Seq.map (fun m -> " |> " + if m.StartsWith("fun") then "(" + m + ")" else m)
           |> String.concat ""
 
         sprintf "this.%s%s" name modifiers
 
       FromRealCode =
         let modifiers =
+          let handleNullable m =
+            if nullable then
+              (m |> List.map (fun m -> "Option.map (" + m + ")")) @ ["Option.toNullType"]
+            else m
           let handleOptional m = 
             if optional then 
               m |> List.map (fun m -> "Option.map (" + m + ")")
@@ -111,27 +157,47 @@ type Item =
             if ``type`` = "ISO8601 timestamp" then
               "fun d -> d.ToString(\"s\", System.Globalization.CultureInfo.InvariantCulture)" :: m
             else m
+          let handleIdArray m =
+            if idarraytype.IsSome then
+              "Seq.map (fun x -> x.ToString())" :: "Seq.toArray" :: "JArray" :: m
+            else m
+          let handleObject m =
+            if objecttype.IsSome then
+              (sprintf "%sJson.FromReal" objecttype.Value) :: m
+            else m
           let handleArray m = 
             if arraytype.IsSome then
-              "Seq.map (fun x -> x.Serialize) >> Seq.toArray >> JArray" :: m
+              "Seq.map (fun x -> x.Serialize)" :: "Seq.toArray" :: "JArray" :: m
             else m
 
           ([]:string list)
           |> handleArray
+          |> handleObject
           |> handleSnowflake
           |> handleDatetime
+          |> handleIdArray
+          |> handleNullable
           |> handleOptional
-          |> Seq.map (fun m -> " |> " + m)
+          |> Seq.map (fun m -> " |> " + if m.StartsWith("fun") then "(" + m + ")" else m)
           |> String.concat ""
 
         sprintf "x.%s%s" realname modifiers
 
       RealName = realname
       RealType =
+        let handleNullable t = if nullable then t + " option" else t
         let handleOptional t = if optional then t + " option" else t
         let handleSnowflake t = if t = "snowflake" then "Snowflake" else t
         let handleInteger t = if t = "integer" then "int" else t
         let handleDatetime t = if t = "ISO8601 timestamp" then "DateTime" else t
+        let handleIdArray t =
+          if idarraytype.IsSome then 
+            "Snowflake array"
+          else t
+        let handleObject t =
+          if objecttype.IsSome then
+            objecttype.Value
+          else t
         let handleArray (t:string) = 
           if arraytype.IsSome then 
             arraytype.Value + " array"
@@ -141,8 +207,11 @@ type Item =
         |> handleSnowflake
         |> handleInteger
         |> handleDatetime
+        |> handleIdArray
         |> handleArray
+        |> handleObject
         |> handleOptional
+        |> handleNullable
     }
 
 [<EntryPointAttribute>]
@@ -163,7 +232,8 @@ let rec main args =
     }
     |> Seq.map (fun row ->
       row.Split(",")
-      |> Seq.map(fun s -> if s.StartsWith("\"") then s.Substring(1, s.Length - 2) else s)
+      |> (fun parts -> [ parts.[0]; parts.[1]; parts |> Seq.skip 2 |> String.concat "," ])
+      |> Seq.map (fun s -> if s.StartsWith("\"") && s.EndsWith("\"") then s.Substring(1, s.Length - 2) else s)
       |> Seq.toList
     )
 
@@ -175,11 +245,14 @@ open System
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json.FSharp
-open Discord.Structures.RawTypes""" name
+open Discord.Structures.RawTypes
+open Mjolnir.Core""" name
 
   for item in items do
     if item.ArrayType.IsSome then
       outputfn "open Discord.Structures.%s" item.ArrayType.Value
+    else if item.ObjectType.IsSome then
+      outputfn "open Discord.Structures.%s" item.ObjectType.Value
 
   outputfn """
 type %sJson =
@@ -220,7 +293,7 @@ type %s =
     let intermed = JsonConvert.DeserializeObject<%sJson>(str, opts)
     intermed.ToReal ()
     
-  member this.Serialize =
+  member this.Serialize () =
     let opts = Serialisation.extend (JsonSerializerSettings())
     let intermed = %sJson.FromReal this
     JsonConvert.SerializeObject(intermed, opts)""" name name

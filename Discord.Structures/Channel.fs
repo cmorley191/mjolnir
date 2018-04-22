@@ -114,7 +114,7 @@ type Channel =
     let intermed = JsonConvert.DeserializeObject<ChannelJson>(str, opts)
     intermed.ToReal ()
 
-  member this.Serialize =
+  member this.Serialize () =
     let opts = Serialisation.extend (JsonSerializerSettings())
     let intermed = ChannelJson.FromReal this
     JsonConvert.SerializeObject(intermed, opts)
