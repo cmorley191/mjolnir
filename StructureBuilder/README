@@ -1,0 +1,45 @@
+StructureBuilder automatically writes the F# code for the Discord.Structures project.
+It was created so that the many variations/properties of Discord's json object structures could be handled consistently and correctly.
+
+Usage:
+ - Copy the table describing the JSON structure from the Discord documentation to a .csv file (e.g., the table at the top of https://discordapp.com/developers/docs/resources/channel)
+ - Make sure you save this csv file without any weird formatting, and with comma delimiters. (Don't worry, commas inside of the description column are read correctly)
+ - Save the csv in the "jsoncsvs" folder of the solution root (feel free to commit this)
+ - Create an empty file in the "StructureBuilder" project (right click...Add...F# Source File), named the same thing as the structure (e.g. "Channel.fs")
+ - Set StructureBuilder as your startup project in VisualStudio and run it
+ - Enter the name of the structure (e.g., Channel)
+ - Copy the code that gets printed to the F# source file you created
+ - Use Alt+Up and Alt+Down in the Solution Explorer to position the file you created below its dependencies
+ - Rebuild the Discord.Structures project and you should now be able to call Discord.Structures.XXX.Deserialize(...) on an http response string (where XXX is the structure name)
+ 
+ 
+ - Check your new file for dependency errors...
+   This structure may depend on other structures (e.g., Channel depends on User). 
+   If we haven't made the required structure yet, either make it using these same steps, or comment it out in the five different places it is referenced:
+    1. open-statement
+    2. Json structure field
+    3. Json structure .ToReal method
+    4. Json structure .FromReal method
+    5. Real structure field
+    
+    
+ - Check your new file for ANY OTHER errors...
+   All other errors are just Discord structure "use cases" we haven't thought of yet for the StructureBuilder. You can try to manually fix the error, or try
+   to write some code to handle the use case in StructureBuilder and rebuild the code.
+   
+   Use cases that are currently supported:
+    - ?Optional field names
+    - Field/structure names with underscores or spaces
+    - Reserved word field names are escaped (only "type" is escaped right now; it shouldn't be too hard to extend that code to support other reserved words)
+    
+    - Asterisks at the end of field names (which get removed)
+    - ?Nullable field types
+    - Field of type...
+        - snowflake
+        - integer
+        - string
+        - bool
+        - ISO8601 timestamp
+    - Field of type "Array of XXX object ids" (where XXX is some structure, but this doesn't make a dependency)
+    - Field of type "Array of XXX objects" (where XXX is a dependent structure)
+    - Field of type "XXX object" (where XXX is a dependent structure)
