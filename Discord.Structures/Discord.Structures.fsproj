@@ -5,7 +5,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Library.fs" />
+    <Compile Include="RawTypes.fs" />
+    <Compile Include="Overwrite.fs" />
+    <Compile Include="User.fs" />
+    <Compile Include="Channel.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json.FSharp" Version="3.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MjolnirCorefs\MjolnirCorefs.fsproj" />
   </ItemGroup>
 
 </Project>

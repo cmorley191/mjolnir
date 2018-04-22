@@ -23,10 +23,9 @@ namespace MjolnirCore.Extensions {
     public static string ToObjectString<TKey, TValue>(this KeyValuePair<TKey, TValue> it) =>
       "{ " + it.Key.ToObjectString() + ", " + it.Value.ToObjectString() + " }";
 
-    public static string ToDictString<TKey, TValue>(this Dictionary<TKey, TValue> dict) {
-      return "{\n" +
+    public static string ToDictString<TKey, TValue>(this Dictionary<TKey, TValue> dict) =>
+      "{\n" +
         "\t" + string.Join(",\n\t", dict.Select(pair => pair.ToObjectString())) +
         "\n}";
-    }
   }
 }

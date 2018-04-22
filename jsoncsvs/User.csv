@@ -1,0 +1,5 @@
+id,snowflake,the user's id
+username,string,"the user's username; not unique across the platform"
+discriminator,string,the user's 4-digit discord-tag
+avatar,?string,the user's avatar hash
+bot?,bool,whether the user belongs to an OAuth2 application

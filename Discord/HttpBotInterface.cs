@@ -19,7 +19,7 @@ namespace Discord {
       this.baseUrl = new Uri(baseUrl ?? Environment.GetEnvironmentVariable("BASE_URL"));
     }
 
-    public async Task<Dictionary<string, object>> MakeRequest(HttpMethod method = null, string resource = "") {
+    public async Task<string> MakeRequest(HttpMethod method = null, string resource = "") {
       method = method ?? HttpMethod.Get;
 
       var message = new HttpRequestMessage(method, new Uri(baseUrl, resource));
@@ -27,9 +27,7 @@ namespace Discord {
       message.Headers.Add("User-Agent", "DiscordBot (https://github.com/cmorley191/mjolnir, v1.0.0)");
 
       var response = await client.SendAsync(message);
-      var responseString = await response.Content.ReadAsStringAsync();
-
-      return JsonConvert.DeserializeObject<Dictionary<string, object>>(responseString);
+      return await response.Content.ReadAsStringAsync();
     }
   }
 }
