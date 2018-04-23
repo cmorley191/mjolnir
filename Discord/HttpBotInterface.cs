@@ -1,38 +1,48 @@
-﻿
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Discord {
-  public class HttpBotInterface {
+namespace Discord
+{
+	public class HttpBotInterface
+	{
+		private static readonly HttpClient Client = new HttpClient();
+		private readonly string authorizationToken;
+		private readonly Uri baseUrl;
 
-    private string authorizationToken;
-    private Uri baseUrl;
+		public HttpBotInterface(string nAuthorizationToken = null, string nBaseUrl = null)
+		{
+			authorizationToken = nAuthorizationToken ?? Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+			if (authorizationToken is null)
+				throw new ArgumentException("No authorization token provided.");
 
-    private static readonly HttpClient client = new HttpClient();
 
-    public HttpBotInterface(string authorizationToken = null, string baseUrl = null) {
-      this.authorizationToken = authorizationToken ?? Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-      this.baseUrl = new Uri(baseUrl ?? Environment.GetEnvironmentVariable("BASE_URL"));
-    }
+			var uriPath = nBaseUrl ?? Environment.GetEnvironmentVariable("BASE_URL");
+			if (uriPath is null)
+				throw new ArgumentException("No BaseUrl defined!");
 
-    public async Task<string> MakeRequest(HttpMethod method = null, string resource = "") {
-      method = method ?? HttpMethod.Get;
+			baseUrl = new Uri(uriPath);
+		}
 
-      var message = new HttpRequestMessage(method, new Uri(baseUrl, resource));
-      message.Headers.Authorization = new AuthenticationHeaderValue("Bot", authorizationToken);
-      message.Headers.Add("User-Agent", "DiscordBot (https://github.com/cmorley191/mjolnir, v1.0.0)");
+		public async Task<string> MakeRequest(HttpMethod method = null, string resource = "")
+		{
+			method = method ?? HttpMethod.Get;
 
-      var response = await client.SendAsync(message);
-      var responseString = await response.Content.ReadAsStringAsync();
+			var message = new HttpRequestMessage(method, new Uri(baseUrl, resource));
+			message.Headers.Authorization = new AuthenticationHeaderValue("Bot", authorizationToken);
 
-      if (!response.IsSuccessStatusCode)
-        throw new Exception($"{response.StatusCode}: {responseString}");
+			var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+			message.Headers.Add("User-Agent", $"DiscordBot (https://github.com/cmorley191/mjolnir, {version})");
 
-      return responseString;
-    }
-  }
+			var response = await Client.SendAsync(message);
+			var responseString = await response.Content.ReadAsStringAsync();
+
+			if (!response.IsSuccessStatusCode)
+				throw new Exception($"{response.StatusCode}: {responseString}");
+
+			return responseString;
+		}
+	}
 }
