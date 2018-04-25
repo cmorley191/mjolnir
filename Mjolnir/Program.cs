@@ -6,12 +6,9 @@ using MjolnirCore;
 using static Discord.Structures.Channel;
 using static Discord.Structures.Message;
 
-namespace Mjolnir
-{
-    internal class Program
-    {
-        private static void Main(string[] args)
-        {
+namespace Mjolnir {
+    internal class Program {
+        private static void Main(string[] args) {
             Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
 
             var http = new HttpBotInterface();

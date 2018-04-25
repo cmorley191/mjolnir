@@ -4,16 +4,13 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Discord
-{
-    public class HttpBotInterface
-    {
+namespace Discord {
+    public class HttpBotInterface {
         private static readonly HttpClient Client = new HttpClient();
         private readonly string authorizationToken;
         private readonly Uri baseUrl;
 
-        public HttpBotInterface(string nAuthorizationToken = null, string nBaseUrl = null)
-        {
+        public HttpBotInterface(string nAuthorizationToken = null, string nBaseUrl = null) {
             authorizationToken = nAuthorizationToken ?? Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             if (authorizationToken is null)
                 throw new ArgumentException("No authorization token provided.");
@@ -26,8 +23,7 @@ namespace Discord
             baseUrl = new Uri(uriPath);
         }
 
-        public async Task<string> MakeRequest(HttpMethod method = null, string resource = "")
-        {
+        public async Task<string> MakeRequest(HttpMethod method = null, string resource = "") {
             method = method ?? HttpMethod.Get;
 
             var message = new HttpRequestMessage(method, new Uri(baseUrl, resource));

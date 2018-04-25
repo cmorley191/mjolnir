@@ -11,9 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MjolnirCore", "MjolnirCore\
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Discord.Structures", "Discord.Structures\Discord.Structures.fsproj", "{6B6989F9-3CAD-461A-A695-D364EC09BB19}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MjolnirCorefs", "MjolnirCorefs\MjolnirCorefs.fsproj", "{3469CCF8-63EF-4DBB-9BDF-37FE256D1D3E}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MjolnirCorefs", "MjolnirCorefs\MjolnirCorefs.fsproj", "{3469CCF8-63EF-4DBB-9BDF-37FE256D1D3E}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "StructureBuilder", "StructureBuilder\StructureBuilder.fsproj", "{3A3A67D0-5D0A-4BB2-91F1-883CE5B1C89C}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "StructureBuilder", "StructureBuilder\StructureBuilder.fsproj", "{3A3A67D0-5D0A-4BB2-91F1-883CE5B1C89C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,12 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace MjolnirCore.Extensions
-{
-    public static class StringExtensions
-    {
-        public static string ToObjectString<TObj>(this TObj it)
-        {
+namespace MjolnirCore.Extensions {
+    public static class StringExtensions {
+        public static string ToObjectString<TObj>(this TObj it) {
             var str = "";
 
             if (it == null)
