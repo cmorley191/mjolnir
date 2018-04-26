@@ -14,7 +14,7 @@ namespace Mjolnir {
             var http = new HttpBotInterface();
             var channelId = "388253588624769034";
             var channel = Channel.Deserialize(http.MakeRequest(resource: $"channels/{channelId}").Result);
-            var messageId = channel.LastMessageId.Value;
+            var messageId = channel.LastMessageId.Value.Value;
             var message =
                 Message.Deserialize(http.MakeRequest(resource: $"channels/{channelId}/messages/{messageId}").Result);
             Console.WriteLine($"Latest message to {channel.Name.Value}: \n" +

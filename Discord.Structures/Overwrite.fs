@@ -5,49 +5,26 @@ open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json.FSharp
 open Discord.Structures.RawTypes
-
-type OverwriteJson =
-  {
-    id: string
-    ``type``: string
-    allow: int
-    deny: int
-  }
-
-  member this.ToReal () : Overwrite =
-    {
-      Id = this.id |> snowflake
-      Type = this.``type``
-      Allow = this.allow
-      Deny = this.deny
-    }
-
-  static member FromReal (x : Overwrite) : OverwriteJson =
-    {
-      id = x.Id |> fun x -> x.ToString()
-      ``type`` = x.Type
-      allow = x.Allow
-      deny = x.Deny
-    }
-
+open Mjolnir.Core
 type Overwrite =
   {
     /// <summary>role or user id</summary>
+    [<JsonProperty("id")>]
     Id: Snowflake
+
     /// <summary>either ""role"" or ""member""</summary>
+    [<JsonProperty("type")>]
     Type: string
+
     /// <summary>permission bit set</summary>
+    [<JsonProperty("allow")>]
     Allow: int
+
     /// <summary>permission bit set</summary>
+    [<JsonProperty("deny")>]
     Deny: int
+
   }
 
-  static member Deserialize str =
-    let opts = Serialisation.extend (JsonSerializerSettings())
-    let intermed = JsonConvert.DeserializeObject<OverwriteJson>(str, opts)
-    intermed.ToReal ()
-
-  member this.Serialize () =
-    let opts = Serialisation.extend (JsonSerializerSettings())
-    let intermed = OverwriteJson.FromReal this
-    JsonConvert.SerializeObject(intermed, opts)
+  static member Deserialize str = JsonConvert.DeserializeObject<Overwrite>(str, General.serializationOpts)
+  member this.Serialize () = JsonConvert.SerializeObject(this, General.serializationOpts)

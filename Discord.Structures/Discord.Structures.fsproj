@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="General.fs" />
     <Compile Include="RawTypes.fs" />
     <Compile Include="Role.fs" />
     <Compile Include="Overwrite.fs" />
@@ -21,6 +22,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MjolnirCorefs\MjolnirCorefs.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.3.4" />
   </ItemGroup>
 
 </Project>

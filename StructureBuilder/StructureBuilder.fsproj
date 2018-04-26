@@ -9,8 +9,4 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MjolnirCore\MjolnirCore.csproj" />
-  </ItemGroup>
-
 </Project>

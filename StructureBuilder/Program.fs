@@ -1,7 +1,6 @@
 ﻿open System
 open System.Text.RegularExpressions
 open System.IO
-open MjolnirCore
 open System.Linq
 
 let capitalize (s:string) = s.[0].ToString().ToUpper() + s.Substring(1)
@@ -13,17 +12,12 @@ type Item =
     Description: string
     ArrayType: string option
     ObjectType: string option
-    JsonName: string
-    JsonType: string
-    ToRealCode: string
-    FromRealCode: string
     RealName: string
     RealType: string
   }
 
   static member Construct [fieldname:string; fieldtype:string; description:string] =
-    let torealname n =
-      if n = "``type``" then "Type" else
+    let torealname (n:string) =
       n.Split([|'_'; ' '|])
       |> Array.map capitalize
       |> String.concat ""
@@ -33,10 +27,6 @@ type Item =
         if n.EndsWith "?" then
           ((n.Remove (n.Length - 1)), true)
         else (n, false)
-      let handleTypeName (n:string, o) =
-        if n = "type" then
-          ("``type``", o)
-        else (n, o)
       let handleAsterisk (n:string, o) =
         if n.EndsWith("*") then
           (n.Substring(0, n.Length - 1), o)
@@ -45,7 +35,6 @@ type Item =
       (fieldname, false)
       |> handleOptional
       |> handleAsterisk
-      |> handleTypeName
 
     let (``type``, nullable) =
       if fieldtype.StartsWith("?") then 
@@ -76,113 +65,11 @@ type Item =
       else None
 
     {
-      DiscordName = fieldname
+      DiscordName = name
       DiscordType = fieldtype
       Description = description
       ArrayType = arraytype
       ObjectType = objecttype
-      JsonName = name
-
-      JsonType = 
-        let handleOptional t = if optional then t + " option" else t
-        let handleSnowflake t = if t = "snowflake" then "string" else t
-        let handleInteger t = if t = "integer" then "int" else t
-        let handleDatetime t = if t = "ISO8601 timestamp" then "string" else t
-        let handleIdArray t = if idarraytype.IsSome then "JArray" else t
-        let handleObject t = if objecttype.IsSome then (sprintf "%sJson" objecttype.Value) else t
-        let handleArray (t:string) = if arraytype.IsSome then "JArray" else t
-
-        ``type``
-        |> handleSnowflake
-        |> handleInteger
-        |> handleDatetime
-        |> handleIdArray
-        |> handleArray
-        |> handleObject
-        |> handleOptional
-
-      ToRealCode =
-        let modifiers =
-          let handleNullable m =
-            if nullable then
-              "Option.ofNullType" :: (m |> List.map (fun m -> "Option.map (" + m + ")"))
-            else m
-          let handleOptional m = 
-            if optional then 
-              m |> List.map (fun m -> "Option.map (" + m + ")")
-            else m
-          let handleSnowflake m = if ``type`` = "snowflake" then m @ ["snowflake"] else m
-          let handleDatetime m =
-            if ``type`` = "ISO8601 timestamp" then
-              "fun s -> DateTime.Parse(s, null, System.Globalization.DateTimeStyles.RoundtripKind)" :: m
-            else m
-          let handleIdArray m =
-            if idarraytype.IsSome then
-              "fun jarr -> jarr.Values() |> Seq.map (fun x -> x.ToString() |> snowflake) |> Seq.toArray" :: m
-            else m
-          let handleObject m =
-            if objecttype.IsSome then
-              "(fun x -> x.ToReal())" :: m
-            else m
-          let handleArray m = 
-            if arraytype.IsSome then
-              (sprintf "fun jarr -> jarr.Values() |> Seq.map (fun x -> x.ToString() |> %s.Deserialize) |> Seq.toArray" arraytype.Value) :: m
-            else m
-
-          ([]:string list)
-          |> handleArray
-          |> handleObject
-          |> handleSnowflake
-          |> handleDatetime
-          |> handleIdArray
-          |> handleNullable
-          |> handleOptional
-          |> Seq.map (fun m -> " |> " + if m.StartsWith("fun") then "(" + m + ")" else m)
-          |> String.concat ""
-
-        sprintf "this.%s%s" name modifiers
-
-      FromRealCode =
-        let modifiers =
-          let handleNullable m =
-            if nullable then
-              (m |> List.map (fun m -> "Option.map (" + m + ")")) @ ["Option.toNullType"]
-            else m
-          let handleOptional m = 
-            if optional then 
-              m |> List.map (fun m -> "Option.map (" + m + ")")
-            else m
-          let handleSnowflake m = if ``type`` = "snowflake" then m @ ["fun x -> x.ToString()"] else m
-          let handleDatetime m =
-            if ``type`` = "ISO8601 timestamp" then
-              "fun d -> d.ToString(\"s\", System.Globalization.CultureInfo.InvariantCulture)" :: m
-            else m
-          let handleIdArray m =
-            if idarraytype.IsSome then
-              "Seq.map (fun x -> x.ToString())" :: "Seq.toArray" :: "JArray" :: m
-            else m
-          let handleObject m =
-            if objecttype.IsSome then
-              (sprintf "%sJson.FromReal" objecttype.Value) :: m
-            else m
-          let handleArray m = 
-            if arraytype.IsSome then
-              "Seq.map (fun x -> x.Serialize)" :: "Seq.toArray" :: "JArray" :: m
-            else m
-
-          ([]:string list)
-          |> handleArray
-          |> handleObject
-          |> handleSnowflake
-          |> handleDatetime
-          |> handleIdArray
-          |> handleNullable
-          |> handleOptional
-          |> Seq.map (fun m -> " |> " + if m.StartsWith("fun") then "(" + m + ")" else m)
-          |> String.concat ""
-
-        sprintf "x.%s%s" realname modifiers
-
       RealName = realname
       RealType =
         let handleNullable t = if nullable then t + " option" else t
@@ -221,7 +108,7 @@ let rec main args =
   let fname = 
     Console.WriteLine "Enter the structure name: "
     let input = Console.ReadLine()
-    Path.Combine(EnvironmentHelper.SolutionFolderPath, "jsoncsvs", input + if input.EndsWith(".csv") then "" else ".csv")
+    Path.Combine("..", "..", "..", "..", "jsoncsvs", input + if input.EndsWith(".csv") then "" else ".csv")
 
   let name = fname.Substring(fname.LastIndexOf("\\") + 1, fname.Length - fname.LastIndexOf("\\") - 1 - ".csv".Length)
   let data =
@@ -254,50 +141,20 @@ open Mjolnir.Core""" name
     else if item.ObjectType.IsSome then
       outputfn "open Discord.Structures.%s" item.ObjectType.Value
 
-  outputfn """
-type %sJson =
-  {""" name
-
-  for item in items do
-    outputfn "    %s: %s" item.JsonName item.JsonType
-
-  outputfn """  }
-
-  member this.ToReal () : %s =
-    {""" name
-
-  for item in items do
-    outputfn "      %s = %s" item.RealName item.ToRealCode
-
-  outputfn """    }
-
-  static member FromReal (x : %s) : %sJson =
-    {""" name name
-
-  for item in items do
-    outputfn "      %s = %s" item.JsonName item.FromRealCode
-
-  outputfn """    }
-
-type %s =
+  outputfn """type %s =
   {""" name
 
   for item in items do
     outputfn """    /// <summary>%s</summary>
-    %s: %s""" item.Description item.RealName item.RealType
+    [<JsonProperty("%s")>]
+    %s: %s
+    """ item.Description item.DiscordName item.RealName item.RealType
 
   outputfn """  }
 
-  static member Deserialize str =
-    let opts = Serialisation.extend (JsonSerializerSettings())
-    let intermed = JsonConvert.DeserializeObject<%sJson>(str, opts)
-    intermed.ToReal ()
-    
-  member this.Serialize () =
-    let opts = Serialisation.extend (JsonSerializerSettings())
-    let intermed = %sJson.FromReal this
-    JsonConvert.SerializeObject(intermed, opts)""" name name
+  static member Deserialize str = JsonConvert.DeserializeObject<%s>(str, General.serializationOpts)    
+  member this.Serialize () = JsonConvert.SerializeObject(this, General.serializationOpts)""" name
 
-  Console.ReadLine() |> ignore
+  main args
 
   0
