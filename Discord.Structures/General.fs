@@ -1,6 +1,10 @@
-﻿module Discord.Structures.General
+﻿namespace Discord.Structures
 
-open Newtonsoft.Json
-open Newtonsoft.Json.FSharp
+type Snowflake = int64
 
-let serializationOpts = Serialisation.extend (JsonSerializerSettings())
+module General =
+
+    open Newtonsoft.Json
+    open Newtonsoft.Json.FSharp
+
+    let serializationOpts = Serialisation.extend (JsonSerializerSettings())

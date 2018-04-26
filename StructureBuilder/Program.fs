@@ -5,177 +5,134 @@ open System.Linq
 
 let capitalize (s:string) = s.[0].ToString().ToUpper() + s.Substring(1)
 
-type Item =
-  private {
-    DiscordName: string
-    DiscordType: string
-    Description: string
-    ArrayType: string option
-    ObjectType: string option
-    RealName: string
-    RealType: string
-  }
+let (|MatchRegex|_|) patt s =
+    if Regex.IsMatch(s, patt) then
+        Some (Regex.Match(s, patt).Groups |> Seq.map string |> Seq.toArray)
+    else None
 
-  static member Construct [fieldname:string; fieldtype:string; description:string] =
-    let fieldname = Regex.Replace(fieldname, "\\s", " ")
-    let fieldtype = Regex.Replace(fieldtype, "\\s", " ")
-    let description = Regex.Replace(description, "\\s", " ")
+type StructureFieldName =
+    | Name of string
+    | Optional of StructureFieldName
 
-    let torealname (n:string) =
-      n.Split([|'_'; ' '|])
-      |> Array.map capitalize
-      |> String.concat ""
+    static member parseDiscordName (n:string) =
+        match n.Trim(' ', '*') with
+        | MatchRegex "^(.*)\?$" groups -> groups.[1] |> StructureFieldName.parseDiscordName |> Optional
+        | somethingElse -> somethingElse |> Name
 
-    let interpretPrimitive (p:string) =
-      match p with
-      | "integer" -> "int"
-      | "snowflake" -> "Snowflake"
-      | "ISO8601 timestamp" -> "DateTime"
-      | _ -> p
+    member this.DiscordString =
+        match this with
+        | Name s -> s
+        | Optional s -> s.DiscordString
 
-    let (name, optional) = 
-      let handleOptional (n:string, o) =
-        if n.EndsWith "?" then
-          ((n.Remove (n.Length - 1)), true)
-        else (n, false)
-      let handleAsterisk (n:string, o) =
-        if n.EndsWith("*") then
-          (n.Substring(0, n.Length - 1), o)
-        else (n, o)
-      let doTrim (n:string, o) =
-        (n.Trim(), o)
+    member this.FSharpString = 
+        match this with
+        | Name s ->
+            s.Split([|'_'; ' '|])
+            |> Array.map capitalize
+            |> String.concat ""
+        | Optional n -> n.FSharpString
 
-      (fieldname, false)
-      |> handleAsterisk
-      |> doTrim
-      |> handleOptional
-      |> handleAsterisk
-      |> doTrim
+type StructureFieldType =
+    | Optional of StructureFieldType
+    | Nullable of StructureFieldType
+    | Integer | Timestamp | Snowflake 
+    | OtherPrimitive of string
+    | Structure of string
+    | Array of StructureFieldType
 
-    let (``type``, nullable) =
-      if fieldtype.StartsWith("?") then 
-        (fieldtype.Substring(1), true)
-      else (fieldtype, false)
+    static member parseDiscordType name (t:string) =
+        match name with
+        | StructureFieldName.Optional n ->
+            t |> StructureFieldType.parseDiscordType n |> Optional
+        | Name _ ->
+            match t.Trim(' ', '*') with
+            | MatchRegex "^\?(.*)$" groups -> groups.[1] |> StructureFieldType.parseDiscordType name |> Nullable
+            | "integer" -> Integer
+            | "ISO8601 timestamp" -> Timestamp
+            | "snowflake" -> Snowflake
+            | MatchRegex "^array of (.*)s$" groups -> groups.[1] |> StructureFieldType.parseDiscordType name |> Array
+            | MatchRegex "^(.*) object id$" _ -> Snowflake
+            | MatchRegex "^(partial |)(.*) object$" groups -> (groups.[2] |> StructureFieldName.parseDiscordName).FSharpString |> Structure
+            | somethingElse -> somethingElse |> OtherPrimitive
 
-    let realname = torealname name
+    member this.FSharpString =
+        match this with
+        | Optional t -> t.FSharpString + " option"
+        | Nullable t -> t.FSharpString + " option"
+        | Integer -> "int"
+        | Timestamp -> "DateTime"
+        | Snowflake -> "Snowflake"
+        | OtherPrimitive t -> t
+        | Structure t -> t
+        | Array t -> t.FSharpString + " array"
 
-    let idarraytype =
-      let arraypattern = "^array\sof\s(.*)\sobject\sids$"
-      if Regex.IsMatch(``type``, arraypattern) then
-        let match_ = Regex.Match(``type``, arraypattern)
-        Some (match_.Groups.[1].ToString() |> torealname)
-      else None
-
-    let arraytype = 
-      let arraypattern = "^array\sof\s(partial\s|)(.*)\sobjects$"
-      if Regex.IsMatch(``type``, arraypattern) then
-        let match_ = Regex.Match(``type``, arraypattern)
-        Some (match_.Groups.[2].ToString() |> torealname)
-      else None
-
-    let simplearraytype =
-      let arraypattern = "^array\sof\s(.*)s$"
-      if arraytype.IsNone && Regex.IsMatch(``type``, arraypattern) then
-        let match_ = Regex.Match(``type``, arraypattern)
-        Some (match_.Groups.[1].ToString() |> interpretPrimitive)
-      else None
-
-    let objecttype =
-      let objectpattern = "^(.*)\sobject$"
-      if arraytype.IsNone && Regex.IsMatch(``type``, objectpattern) then
-        let match_ = Regex.Match(``type``, objectpattern)
-        Some (match_.Groups.[1].ToString() |> torealname)
-      else None
-
-    {
-      DiscordName = name
-      DiscordType = fieldtype
-      Description = description
-      ArrayType = arraytype
-      ObjectType = objecttype
-      RealName = realname
-      RealType =
-        let handleNullable t = if nullable then t + " option" else t
-        let handleOptional t = if optional then t + " option" else t
-        let handlePrimitive t = interpretPrimitive t
-        let handleIdArray t =
-          if idarraytype.IsSome then 
-            "Snowflake array"
-          else t
-        let handleObject t =
-          if objecttype.IsSome then
-            objecttype.Value
-          else t
-        let handleArray (t:string) = 
-          if arraytype.IsSome then 
-            arraytype.Value + " array"
-          else if simplearraytype.IsSome then
-            simplearraytype.Value + " array"
-          else t
-
-        ``type``
-        |> handlePrimitive
-        |> handleIdArray
-        |> handleArray
-        |> handleObject
-        |> handleOptional
-        |> handleNullable
+type StructureField =
+    private {
+        Name: StructureFieldName
+        Type: StructureFieldType
+        Description: string
     }
+
+    static member Construct [discordname:string; discordtype:string; description:string] =
+        let name = discordname |> StructureFieldName.parseDiscordName
+        {
+            Name = name
+            Type = discordtype |> StructureFieldType.parseDiscordType name
+            Description = description
+        }
 
 [<EntryPointAttribute>]
 let rec main args =
-  let outputfn = printfn
+    let outputfn = printfn
 
-  let fname = 
-    Console.WriteLine "Enter the structure name: "
-    let input = Console.ReadLine()
-    Path.Combine("..", "..", "..", "..", "jsoncsvs", input + if input.EndsWith(".csv") then "" else ".csv")
+    let fname = 
+        Console.WriteLine "Enter the structure name: "
+        let input = Console.ReadLine()
+        if input = "exit" then
+            exit 0
+        else
+            Path.Combine("..", "..", "..", "..", "jsoncsvs", input + if input.EndsWith(".csv") then "" else ".csv")
 
-  let name = fname.Substring(fname.LastIndexOf("\\") + 1, fname.Length - fname.LastIndexOf("\\") - 1 - ".csv".Length)
-  let data =
-    seq {
-      use sr = new StreamReader (fname)
-      while not sr.EndOfStream do
-          yield sr.ReadLine ()
-    }
-    |> Seq.map (fun row ->
-      row.Split(",")
-      |> (fun parts -> [ parts.[0]; parts.[1]; parts |> Seq.skip 2 |> String.concat "," ])
-      |> Seq.map (fun s -> if s.StartsWith("\"") && s.EndsWith("\"") then s.Substring(1, s.Length - 2) else s)
-      |> Seq.toList
-    )
+    let name = fname.Substring(fname.LastIndexOf("\\") + 1, fname.Length - fname.LastIndexOf("\\") - 1 - ".csv".Length)
 
-  let items = data |> Seq.map Item.Construct
+    let data =
+        seq {
+            use sr = new StreamReader (fname)
+            while not sr.EndOfStream do
+                    yield sr.ReadLine ()
+        }
+        |> Seq.map (fun row ->
+            row.Split(",")
+            |> Array.map (fun x -> Regex.Replace(x, "\\s", " "))
+            |> (fun parts -> [ parts.[0]; parts.[1]; parts |> Seq.skip 2 |> String.concat "," ])
+            |> Seq.map (fun s -> if s.StartsWith("\"") && s.EndsWith("\"") then s.Substring(1, s.Length - 2) else s)
+            |> Seq.toList
+        )
 
-  outputfn """module rec Discord.Structures.%s
+    let structureFields = data |> Seq.map StructureField.Construct
+
+    outputfn """namespace Discord.Structures
 
 open System
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json.FSharp
-open Discord.Structures.RawTypes
-open Mjolnir.Core""" name
+open Mjolnir.Core
 
-  for item in items do
-    if item.ArrayType.IsSome then
-      outputfn "open Discord.Structures.%s" item.ArrayType.Value
-    else if item.ObjectType.IsSome then
-      outputfn "open Discord.Structures.%s" item.ObjectType.Value
+type %s =
+    {""" name
 
-  outputfn """type %s =
-  {""" name
+    for item in structureFields do
+        outputfn """        /// <summary>%s</summary>
+        [<JsonProperty("%s")>]
+        %s: %s
+        """ item.Description item.Name.DiscordString item.Name.FSharpString item.Type.FSharpString
 
-  for item in items do
-    outputfn """    /// <summary>%s</summary>
-    [<JsonProperty("%s")>]
-    %s: %s
-    """ item.Description item.DiscordName item.RealName item.RealType
+    outputfn """    }
 
-  outputfn """  }
+    static member Deserialize str = JsonConvert.DeserializeObject<%s>(str, General.serializationOpts)        
+    member this.Serialize () = JsonConvert.SerializeObject(this, General.serializationOpts)""" name
 
-  static member Deserialize str = JsonConvert.DeserializeObject<%s>(str, General.serializationOpts)    
-  member this.Serialize () = JsonConvert.SerializeObject(this, General.serializationOpts)""" name
 
-  main args
-
-  0
+    main args |> ignore
+    0
