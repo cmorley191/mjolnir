@@ -31,10 +31,15 @@ type Item =
         if n.EndsWith("*") then
           (n.Substring(0, n.Length - 1), o)
         else (n, o)
+      let doTrim (n:string, o) =
+        (n.Trim(), o)
 
       (fieldname, false)
+      |> handleAsterisk
+      |> doTrim
       |> handleOptional
       |> handleAsterisk
+      |> doTrim
 
     let (``type``, nullable) =
       if fieldtype.StartsWith("?") then 

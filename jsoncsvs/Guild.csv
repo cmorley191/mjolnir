@@ -1,0 +1,31 @@
+﻿id,snowflake,guild id
+name,string,guild name (2-100 characters)
+icon,?string,icon hash
+splash,?string,splash hash
+owner?,bool,whether or not the user is the owner of the guild
+owner_id,snowflake,id of owner
+permissions?,integer,total permissions for the user in the guild (does not include channel overrides)
+region,string,voice region id for the guild
+afk_channel_id,?snowflake,id of afk channel
+afk_timeout,integer,afk timeout in seconds
+embed_enabled?,bool,is this guild embeddable (e.g. widget)
+embed_channel_id?,snowflake,id of embedded channel
+verification_level,integer,verification level required for the guild
+default_message_notifications,integer,default message notifications level
+explicit_content_filter,integer,explicit content filter level
+roles,array of role objects,roles in the guild
+emojis,array of emoji objects,custom guild emojis
+features,array of strings,enabled guild features
+mfa_level,integer,required MFA level for the guild
+application_id,?snowflake,application id of the guild creator if it is bot-created
+widget_enabled?,bool,whether or not the server widget is enabled
+widget_channel_id?,snowflake,the channel id for the server widget
+system_channel_id,?snowflake,the id of the channel to which system messages are sent
+joined_at? *,ISO8601 timestamp,when this guild was joined at
+large? *,bool,whether this is considered a large guild
+unavailable? *,bool,is this guild unavailable
+member_count? *,integer,total number of members in this guild
+voice_states? *,array of partial voice state objects,(without the guild_id key)
+members? *,array of guild member objects,users in the guild
+channels? *,array of channel objects,channels in the guild
+presences? *,array of partial presence update objects,presences of the users in the guild
