@@ -9,13 +9,11 @@ open Mjolnir.Core
 open Discord.Structures.Role
 (*
 open Discord.Structures.Emoji
-open Discord.Structures.Partial voiceState
+open Discord.Structures.VoiceState
 open Discord.Structures.GuildMember
+open Discord.Structures.PresenceUpdate
 *)
 open Discord.Structures.Channel
-(*
-open Discord.Structures.Partial presenceUpdate
-*)
 type Guild =
   {
     /// <summary>guild id</summary>
@@ -34,7 +32,7 @@ type Guild =
     [<JsonProperty("splash")>]
     Splash: string option
 
-    /// <summary>whether or not the user is the owner of the guild</summary>
+    /// <summary>whether or not the user is the owner of the guild</summary>
     [<JsonProperty("owner")>]
     Owner: bool option
 
@@ -42,11 +40,11 @@ type Guild =
     [<JsonProperty("owner_id")>]
     OwnerId: Snowflake
 
-    /// <summary>total permissions for the user in the guild (does not include channel overrides)</summary>
+    /// <summary>total permissions for the user in the guild (does not include channel overrides)</summary>
     [<JsonProperty("permissions")>]
     Permissions: int option
 
-    /// <summary>voice region id for the guild</summary>
+    /// <summary>voice region id for the guild</summary>
     [<JsonProperty("region")>]
     Region: string
 
@@ -66,11 +64,11 @@ type Guild =
     [<JsonProperty("embed_channel_id")>]
     EmbedChannelId: Snowflake option
 
-    /// <summary>verification level required for the guild</summary>
+    /// <summary>verification level required for the guild</summary>
     [<JsonProperty("verification_level")>]
     VerificationLevel: int
 
-    /// <summary>default message notifications level</summary>
+    /// <summary>default message notifications level</summary>
     [<JsonProperty("default_message_notifications")>]
     DefaultMessageNotifications: int
 
@@ -90,7 +88,7 @@ type Guild =
     [<JsonProperty("features")>]
     Features: string array
 
-    /// <summary>required MFA level for the guild</summary>
+    /// <summary>required MFA level for the guild</summary>
     [<JsonProperty("mfa_level")>]
     MfaLevel: int
 
@@ -126,10 +124,10 @@ type Guild =
     [<JsonProperty("member_count")>]
     MemberCount: int option
     (*
-    /// <summary>(without the guild_id key)</summary>
+    /// <summary>(without the guild_id key)</summary>
     [<JsonProperty("voice_states")>]
-    VoiceStates: Partial voiceState array option
-    
+    VoiceStates: VoiceState array option
+
     /// <summary>users in the guild</summary>
     [<JsonProperty("members")>]
     Members: GuildMember array option
@@ -140,7 +138,7 @@ type Guild =
     (*
     /// <summary>presences of the users in the guild</summary>
     [<JsonProperty("presences")>]
-    Presences: Partial presenceUpdate array option
+    Presences: PresenceUpdate array option
     *)
   }
 

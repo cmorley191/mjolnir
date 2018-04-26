@@ -17,10 +17,21 @@ type Item =
   }
 
   static member Construct [fieldname:string; fieldtype:string; description:string] =
+    let fieldname = Regex.Replace(fieldname, "\\s", " ")
+    let fieldtype = Regex.Replace(fieldtype, "\\s", " ")
+    let description = Regex.Replace(description, "\\s", " ")
+
     let torealname (n:string) =
       n.Split([|'_'; ' '|])
       |> Array.map capitalize
       |> String.concat ""
+
+    let interpretPrimitive (p:string) =
+      match p with
+      | "integer" -> "int"
+      | "snowflake" -> "Snowflake"
+      | "ISO8601 timestamp" -> "DateTime"
+      | _ -> p
 
     let (name, optional) = 
       let handleOptional (n:string, o) =
@@ -56,10 +67,17 @@ type Item =
       else None
 
     let arraytype = 
-      let arraypattern = "^array\sof\s(.*)\sobjects$"
+      let arraypattern = "^array\sof\s(partial\s|)(.*)\sobjects$"
       if Regex.IsMatch(``type``, arraypattern) then
         let match_ = Regex.Match(``type``, arraypattern)
-        Some (match_.Groups.[1].ToString() |> torealname)
+        Some (match_.Groups.[2].ToString() |> torealname)
+      else None
+
+    let simplearraytype =
+      let arraypattern = "^array\sof\s(.*)s$"
+      if arraytype.IsNone && Regex.IsMatch(``type``, arraypattern) then
+        let match_ = Regex.Match(``type``, arraypattern)
+        Some (match_.Groups.[1].ToString() |> interpretPrimitive)
       else None
 
     let objecttype =
@@ -79,9 +97,7 @@ type Item =
       RealType =
         let handleNullable t = if nullable then t + " option" else t
         let handleOptional t = if optional then t + " option" else t
-        let handleSnowflake t = if t = "snowflake" then "Snowflake" else t
-        let handleInteger t = if t = "integer" then "int" else t
-        let handleDatetime t = if t = "ISO8601 timestamp" then "DateTime" else t
+        let handlePrimitive t = interpretPrimitive t
         let handleIdArray t =
           if idarraytype.IsSome then 
             "Snowflake array"
@@ -93,12 +109,12 @@ type Item =
         let handleArray (t:string) = 
           if arraytype.IsSome then 
             arraytype.Value + " array"
+          else if simplearraytype.IsSome then
+            simplearraytype.Value + " array"
           else t
 
         ``type``
-        |> handleSnowflake
-        |> handleInteger
-        |> handleDatetime
+        |> handlePrimitive
         |> handleIdArray
         |> handleArray
         |> handleObject
