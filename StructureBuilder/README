@@ -15,31 +15,11 @@ Usage:
  
  - Check your new file for dependency errors...
    This structure may depend on other structures (e.g., Channel depends on User). 
-   If we haven't made the required structure yet, either make it using these same steps, or comment it out in the five different places it is referenced:
-    1. open-statement
-    2. Json structure field
-    3. Json structure .ToReal method
-    4. Json structure .FromReal method
-    5. Real structure field
-    
-    
- - Check your new file for ANY OTHER errors...
-   All other errors are just Discord structure "use cases" we haven't thought of yet for the StructureBuilder. You can try to manually fix the error, or try
-   to write some code to handle the use case in StructureBuilder and rebuild the code.
+   If we haven't made the required structure yet, either make it using these same steps, or comment it out.
    
-   Use cases that are currently supported:
-    - ?Optional field names
-    - Field/structure names with underscores or spaces
-    - Reserved word field names are escaped (only "type" is escaped right now; it shouldn't be too hard to extend that code to support other reserved words)
-    
-    - Asterisks at the end of field names (which get removed)
-    - ?Nullable field types
-    - Field of type...
-        - snowflake
-        - integer
-        - string
-        - bool
-        - ISO8601 timestamp
-    - Field of type "Array of XXX object ids" (where XXX is some structure, but this doesn't make a dependency)
-    - Field of type "Array of XXX objects" (where XXX is a dependent structure)
-    - Field of type "XXX object" (where XXX is a dependent structure)
+ - Check your new file for ANY OTHER errors...
+   All other errors are just Discord structure "use cases" we haven't thought of yet for the StructureBuilder.
+   You can see the use cases listed out at the top of the StructureBuilder Program.fs.
+   StructureFieldName is a union of the different kinds of names that are supported right now.
+   StructureFieldType is a union of the different kinds of types that are supported right now.
+   It should be painless to add more if we find any.

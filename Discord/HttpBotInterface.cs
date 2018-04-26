@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
+using Discord.Structures;
 
 namespace Discord {
     public class HttpBotInterface {
@@ -40,5 +41,7 @@ namespace Discord {
 
             return responseString;
         }
+
+        public async Task<Guild> GetGuild(long id) => Guild.Deserialize(await MakeRequest(HttpMethod.Get, $"guilds/{id}"));
     }
 }
