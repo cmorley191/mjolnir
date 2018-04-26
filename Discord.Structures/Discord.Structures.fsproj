@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <Compile Include="General.fs" />
-    <Compile Include="RawTypes.fs" />
     <Compile Include="Role.fs" />
     <Compile Include="Overwrite.fs" />
     <Compile Include="User.fs" />

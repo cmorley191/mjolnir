@@ -43,5 +43,15 @@ namespace Discord {
         }
 
         public async Task<Guild> GetGuild(long id) => Guild.Deserialize(await MakeRequest(HttpMethod.Get, $"guilds/{id}"));
+        public async Task<Guild[]> GetAccessibleGuilds() => General.DeserializeMany<Guild>(await MakeRequest(HttpMethod.Get, "users/@me/guilds"));
+
+        public async Task<Channel> GetChannel(long id) => Channel.Deserialize(await MakeRequest(HttpMethod.Get, $"channels/{id}"));
+        public async Task<Channel[]> GetGuildChannels(long guildId) => General.DeserializeMany<Channel>(await MakeRequest(HttpMethod.Get, $"guilds/{guildId}/channels"));
+        public Task<Channel[]> GetGuildChannels(Guild guild) => GetGuildChannels(guild.Id);
+
+        public async Task<Message> GetMessage(long channelId, long messageId) => Message.Deserialize(await MakeRequest(HttpMethod.Get, $"channels/{channelId}/messages/{messageId}"));
+        public Task<Message> GetMessage(Channel channel, long messageId) => GetMessage(channel.Id, messageId);
+
+        public async Task<User> GetUser(long id) => User.Deserialize(await MakeRequest(HttpMethod.Get, $"users/{id}"));
     }
 }

@@ -5,7 +5,7 @@ open System.Linq
 
 let capitalize (s:string) = s.[0].ToString().ToUpper() + s.Substring(1)
 
-let (|MatchRegex|_|) patt s =
+let (|RegexMatch|_|) patt s =
     if Regex.IsMatch(s, patt) then
         Some (Regex.Match(s, patt).Groups |> Seq.map string |> Seq.toArray)
     else None
@@ -16,7 +16,7 @@ type StructureFieldName =
 
     static member parseDiscordName (n:string) =
         match n.Trim(' ', '*') with
-        | MatchRegex "^(.*)\?$" groups -> groups.[1] |> StructureFieldName.parseDiscordName |> Optional
+        | RegexMatch "^(.*)\?$" groups -> groups.[1] |> StructureFieldName.parseDiscordName |> Optional
         | somethingElse -> somethingElse |> Name
 
     member this.DiscordString =
@@ -46,13 +46,13 @@ type StructureFieldType =
             t |> StructureFieldType.parseDiscordType n |> Optional
         | Name _ ->
             match t.Trim(' ', '*') with
-            | MatchRegex "^\?(.*)$" groups -> groups.[1] |> StructureFieldType.parseDiscordType name |> Nullable
+            | RegexMatch "^\?(.*)$" groups -> groups.[1] |> StructureFieldType.parseDiscordType name |> Nullable
             | "integer" -> Integer
             | "ISO8601 timestamp" -> Timestamp
             | "snowflake" -> Snowflake
-            | MatchRegex "^array of (.*)s$" groups -> groups.[1] |> StructureFieldType.parseDiscordType name |> Array
-            | MatchRegex "^(.*) object id$" _ -> Snowflake
-            | MatchRegex "^(partial |)(.*) object$" groups -> (groups.[2] |> StructureFieldName.parseDiscordName).FSharpString |> Structure
+            | RegexMatch "^array of (.*)s$" groups -> groups.[1] |> StructureFieldType.parseDiscordType name |> Array
+            | RegexMatch "^(.*) object id$" _ -> Snowflake
+            | RegexMatch "^(partial |)(.*) object$" groups -> (groups.[2] |> StructureFieldName.parseDiscordName).FSharpString |> Structure
             | somethingElse -> somethingElse |> OtherPrimitive
 
     member this.FSharpString =

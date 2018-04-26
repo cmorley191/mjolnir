@@ -24,5 +24,8 @@ namespace MjolnirCore.Extensions {
             "{\n" +
             "\t" + string.Join(",\n\t", dict.Select(pair => pair.ToObjectString())) +
             "\n}";
+
+        public static string ToSequenceString<T>(this IEnumerable<T> it) =>
+            "[" + string.Join(", ", it.Select(x => x.ToString())) + "]";
     }
 }

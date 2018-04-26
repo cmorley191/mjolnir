@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using Discord;
 using DotNetEnv;
 using MjolnirCore;
+using MjolnirCore.Extensions;
 using static Discord.Structures.Channel;
 using static Discord.Structures.Message;
 
@@ -11,7 +13,7 @@ namespace Mjolnir {
         private static void Main(string[] args) {
             Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
 
-            gatewayDemo();
+            httpDemo();
         }
 
         private static void gatewayDemo() {
@@ -24,16 +26,23 @@ namespace Mjolnir {
 
         private static void httpDemo() {
             var http = new HttpBotInterface();
-            var channelId = "388253588624769034";
-            var channel = Channel.Deserialize(http.MakeRequest(resource: $"channels/{channelId}").Result);
-            var messageId = channel.LastMessageId.Value.Value;
-            var message =
-                Message.Deserialize(http.MakeRequest(resource: $"channels/{channelId}/messages/{messageId}").Result);
-            Console.WriteLine($"Latest message to {channel.Name.Value}: \n" +
-                              $"{message.Author.Username} ({message.Timestamp}): {message.Content}\n" +
-                              (message.EditedTimestamp.IsSome()
-                                  ? $"(Edited {message.EditedTimestamp.Value.ToString()})"
-                                  : ""));
+            var guilds = http.GetAccessibleGuilds().Result;
+            Console.WriteLine($"Accessible guilds: {guilds.Select(g => g.Name).ToSequenceString()}");
+
+            var guild = guilds.Single(g => g.Name == "Anime_NSFW");
+            var channels = http.GetGuildChannels(guild).Result;
+            Console.WriteLine($"{guild.Name} channels: {channels.Select(c => c.Name).SelectSome().ToSequenceString()}");
+
+            var channel = channels.Single(c => c.Name.IsSome(n => n == "make_bot_go"));
+
+            channel.LastMessageId.IfSome(messageId => {
+                var lastMessage = http.GetMessage(channel, messageId.Value).Result;
+                Console.WriteLine($"Latest message to {channel.Name.Value}: \n" +
+                                  $"{lastMessage.Author.Username} ({lastMessage.Timestamp}): {lastMessage.Content}\n" +
+                                  (lastMessage.EditedTimestamp.IsSome()
+                                      ? $"(Edited {lastMessage.EditedTimestamp.Value.ToString()})"
+                                      : ""));
+            });
             Console.ReadKey();
         }
     }
