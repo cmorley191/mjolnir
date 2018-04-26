@@ -11,6 +11,18 @@ namespace Mjolnir {
         private static void Main(string[] args) {
             Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
 
+            gatewayDemo();
+        }
+
+        private static void gatewayDemo() {
+            var gate = new GatewayClient();
+            gate.Connect();
+
+            Console.Write("Press Enter to Terminate: ");
+            Console.ReadKey();
+        }
+
+        private static void httpDemo() {
             var http = new HttpBotInterface();
             var channelId = "388253588624769034";
             var channel = Channel.Deserialize(http.MakeRequest(resource: $"channels/{channelId}").Result);
