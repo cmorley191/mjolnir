@@ -1,0 +1,7 @@
+﻿id,?snowflake,emoji id
+name,string,emoji name
+roles?,array of role object ids,roles this emoji is whitelisted to
+user?,user object,user that created this emoji
+require_colons?,bool,whether this emoji must be wrapped in colons
+managed?,bool,whether this emoji is managed
+animated?,bool,whether this emoji is animated

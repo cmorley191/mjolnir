@@ -1,0 +1,3 @@
+﻿count,integer,times this emoji has been used to react
+me,bool,whether the current user reacted using this emoji
+emoji,partial emoji object,emoji information

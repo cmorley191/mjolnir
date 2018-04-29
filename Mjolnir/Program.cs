@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Discord;
 using Discord.Http;
 using Discord.Structures;
@@ -68,6 +69,22 @@ namespace Mjolnir {
 
                     Console.WriteLine(str);
                 }
+
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine("Inverting reactions to latest message.");
+                latestMessage.Reactions.IfSome(reactions => {
+                    foreach (var reaction in reactions) {
+                        var emojiId = (reaction.Emoji.Id.IsSome()) ? reaction.Emoji.Id.Value.ToString() : reaction.Emoji.Name;
+                        if (reaction.Me) {
+                            http.DeleteReaction(latestMessage.ChannelId, latestMessage.Id, emojiId).Wait();
+                        } else {
+                            http.CreateReaction(latestMessage.ChannelId, latestMessage.Id, emojiId).Wait();
+                        }
+                        Thread.Sleep(1000);
+                    }
+                });
+                Console.WriteLine("Done");
             });
 
             Console.ReadKey();

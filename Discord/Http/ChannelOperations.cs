@@ -10,11 +10,6 @@ namespace Discord.Http {
         public async Task<Channel> GetChannel(long id) =>
             Channel.Deserialize(await MakeRequest(HttpMethod.Get, $"channels/{id}"));
 
-        private string queryBuilder(string uri, List<string> queryParams) {
-            if (queryParams.Count <= 0) return uri;
-            return uri + "?" + string.Join('&', queryParams);
-        }
-
         public Task<Message> GetMessage(Channel channel, long messageId) => GetMessage(channel.Id, messageId);
         public async Task<Message> GetMessage(long channelId, long messageId) =>
             Message.Deserialize(await MakeRequest(HttpMethod.Get, $"channels/{channelId}/messages/{messageId}"));
@@ -44,5 +39,10 @@ namespace Discord.Http {
 
             return General.DeserializeMany<Message>(await MakeRequest(HttpMethod.Get, $"channels/{channelId}/messages", queryParameters));
         }
+
+        public async Task CreateReaction(long channelId, long messageId, string emojiId) =>
+            await MakeRequest(HttpMethod.Put, $"channels/{channelId}/messages/{messageId}/reactions/{emojiId}/@me");
+        public async Task DeleteReaction(long channelId, long messageId, string emojiId) =>
+            await MakeRequest(HttpMethod.Delete, $"channels/{channelId}/messages/{messageId}/reactions/{emojiId}/@me");
     }
 }

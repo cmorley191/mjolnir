@@ -65,11 +65,11 @@ type Message =
         /// <summary>any embedded content</summary>
         [<JsonProperty("embeds")>]
         Embeds: Embed array
-        (*
+        
         /// <summary>reactions to the message</summary>
         [<JsonProperty("reactions", NullValueHandling = NullValueHandling.Ignore)>]
         Reactions: Reaction array option
-        *)
+        
         /// <summary>used for validating a message was sent</summary>
         [<JsonProperty("nonce", NullValueHandling = NullValueHandling.Ignore)>]
         Nonce: Snowflake option
