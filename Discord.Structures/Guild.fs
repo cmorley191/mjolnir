@@ -25,7 +25,7 @@ type Guild =
         Splash: string option
 
         /// <summary>whether or not the user is the owner of the guild</summary>
-        [<JsonProperty("owner")>]
+        [<JsonProperty("owner", NullValueHandling = NullValueHandling.Ignore)>]
         Owner: bool option
 
         /// <summary>id of owner</summary>
@@ -33,7 +33,7 @@ type Guild =
         OwnerId: Snowflake
 
         /// <summary>total permissions for the user in the guild (does not include channel overrides)</summary>
-        [<JsonProperty("permissions")>]
+        [<JsonProperty("permissions", NullValueHandling = NullValueHandling.Ignore)>]
         Permissions: int option
 
         /// <summary>voice region id for the guild</summary>
@@ -49,11 +49,11 @@ type Guild =
         AfkTimeout: int
 
         /// <summary>is this guild embeddable (e.g. widget)</summary>
-        [<JsonProperty("embed_enabled")>]
+        [<JsonProperty("embed_enabled", NullValueHandling = NullValueHandling.Ignore)>]
         EmbedEnabled: bool option
 
         /// <summary>id of embedded channel</summary>
-        [<JsonProperty("embed_channel_id")>]
+        [<JsonProperty("embed_channel_id", NullValueHandling = NullValueHandling.Ignore)>]
         EmbedChannelId: Snowflake option
 
         /// <summary>verification level required for the guild</summary>
@@ -67,11 +67,11 @@ type Guild =
         /// <summary>explicit content filter level</summary>
         [<JsonProperty("explicit_content_filter")>]
         ExplicitContentFilter: int
-        (*
+
         /// <summary>roles in the guild</summary>
         [<JsonProperty("roles")>]
         Roles: Role array
-
+        (*
         /// <summary>custom guild emojis</summary>
         [<JsonProperty("emojis")>]
         Emojis: Emoji array
@@ -89,11 +89,11 @@ type Guild =
         ApplicationId: Snowflake option
 
         /// <summary>whether or not the server widget is enabled</summary>
-        [<JsonProperty("widget_enabled")>]
+        [<JsonProperty("widget_enabled", NullValueHandling = NullValueHandling.Ignore)>]
         WidgetEnabled: bool option
 
         /// <summary>the channel id for the server widget</summary>
-        [<JsonProperty("widget_channel_id")>]
+        [<JsonProperty("widget_channel_id", NullValueHandling = NullValueHandling.Ignore)>]
         WidgetChannelId: Snowflake option
 
         /// <summary>the id of the channel to which system messages are sent</summary>
@@ -101,35 +101,35 @@ type Guild =
         SystemChannelId: Snowflake option
 
         /// <summary>when this guild was joined at</summary>
-        [<JsonProperty("joined_at")>]
+        [<JsonProperty("joined_at", NullValueHandling = NullValueHandling.Ignore)>]
         JoinedAt: DateTime option
 
         /// <summary>whether this is considered a large guild</summary>
-        [<JsonProperty("large")>]
+        [<JsonProperty("large", NullValueHandling = NullValueHandling.Ignore)>]
         Large: bool option
 
         /// <summary>is this guild unavailable</summary>
-        [<JsonProperty("unavailable")>]
+        [<JsonProperty("unavailable", NullValueHandling = NullValueHandling.Ignore)>]
         Unavailable: bool option
 
         /// <summary>total number of members in this guild</summary>
-        [<JsonProperty("member_count")>]
+        [<JsonProperty("member_count", NullValueHandling = NullValueHandling.Ignore)>]
         MemberCount: int option
         (*
         /// <summary>(without the guild_id key)</summary>
-        [<JsonProperty("voice_states")>]
+        [<JsonProperty("voice_states", NullValueHandling = NullValueHandling.Ignore)>]
         VoiceStates: VoiceState array option
 
         /// <summary>users in the guild</summary>
-        [<JsonProperty("members")>]
+        [<JsonProperty("members", NullValueHandling = NullValueHandling.Ignore)>]
         Members: GuildMember array option
         *)
         /// <summary>channels in the guild</summary>
-        [<JsonProperty("channels")>]
+        [<JsonProperty("channels", NullValueHandling = NullValueHandling.Ignore)>]
         Channels: Channel array option
         (*
         /// <summary>presences of the users in the guild</summary>
-        [<JsonProperty("presences")>]
+        [<JsonProperty("presences", NullValueHandling = NullValueHandling.Ignore)>]
         Presences: PresenceUpdate array option
         *)
     }

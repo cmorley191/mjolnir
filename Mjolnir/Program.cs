@@ -36,7 +36,7 @@ namespace Mjolnir {
             var channel = channels.Single(c => c.Name.IsSome(n => n == "make_bot_go"));
 
             channel.LastMessageId.IfSome(messageId => {
-                var lastMessage = http.GetMessage(channel, messageId.Value).Result;
+                var lastMessage = http.GetMessage(channel, messageId).Result;
                 Console.WriteLine($"Latest message to {channel.Name.Value}: \n" +
                                   $"{lastMessage.Author.Username} ({lastMessage.Timestamp}): {lastMessage.Content}\n" +
                                   (lastMessage.EditedTimestamp.IsSome()

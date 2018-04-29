@@ -25,7 +25,7 @@ type User =
         Avatar: string option
 
         /// <summary>whether the user belongs to an OAuth2 application</summary>
-        [<JsonProperty("bot")>]
+        [<JsonProperty("bot", NullValueHandling = NullValueHandling.Ignore)>]
         Bot: bool option
 
     }

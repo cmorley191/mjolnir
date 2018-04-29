@@ -32,6 +32,8 @@ type StructureFieldName =
             |> String.concat ""
         | Optional n -> n.FSharpString
 
+    member this.JsonProperties = [ sprintf "\"%s\"" this.DiscordString ]
+
 type StructureFieldType =
     | Optional of StructureFieldType
     | Nullable of StructureFieldType
@@ -57,8 +59,8 @@ type StructureFieldType =
 
     member this.FSharpString =
         match this with
-        | Optional t -> t.FSharpString + " option"
-        | Nullable t -> t.FSharpString + " option"
+        | Optional (Nullable t) | Nullable (Optional t) 
+            | Optional t | Nullable t -> t.FSharpString + " option"
         | Integer -> "int"
         | Timestamp -> "DateTime"
         | Snowflake -> "Snowflake"
@@ -66,18 +68,26 @@ type StructureFieldType =
         | Structure t -> t
         | Array t -> t.FSharpString + " array"
 
+    member this.JsonProperties =
+        match this with
+        | Optional t -> List.append t.JsonProperties ["NullValueHandling = NullValueHandling.Ignore"]
+        | _ -> []
+
 type StructureField =
     private {
         Name: StructureFieldName
         Type: StructureFieldType
+        Properties: string list
         Description: string
     }
 
     static member Construct [discordname:string; discordtype:string; description:string] =
         let name = discordname |> StructureFieldName.parseDiscordName
+        let ``type`` = discordtype |> StructureFieldType.parseDiscordType name
         {
             Name = name
-            Type = discordtype |> StructureFieldType.parseDiscordType name
+            Type = ``type``
+            Properties = List.append name.JsonProperties ``type``.JsonProperties
             Description = description
         }
 
@@ -124,9 +134,9 @@ type %s =
 
     for item in structureFields do
         outputfn """        /// <summary>%s</summary>
-        [<JsonProperty("%s")>]
+        [<JsonProperty(%s)>]
         %s: %s
-        """ item.Description item.Name.DiscordString item.Name.FSharpString item.Type.FSharpString
+        """ item.Description (String.Join(", ", item.Properties)) item.Name.FSharpString item.Type.FSharpString
 
     outputfn """    }
 
