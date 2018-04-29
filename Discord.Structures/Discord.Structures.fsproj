@@ -9,6 +9,8 @@
     <Compile Include="Role.fs" />
     <Compile Include="Overwrite.fs" />
     <Compile Include="User.fs" />
+    <Compile Include="EmbedField.fs" />
+    <Compile Include="Embed.fs" />
     <Compile Include="Attachment.fs" />
     <Compile Include="Message.fs" />
     <Compile Include="Channel.fs" />

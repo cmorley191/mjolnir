@@ -1,0 +1,3 @@
+﻿name,string,name of the field
+value,string,value of the field
+inline?,bool,whether or not this field should display inline

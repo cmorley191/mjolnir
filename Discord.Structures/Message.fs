@@ -61,11 +61,11 @@ type Message =
         /// <summary>any attached files</summary>
         [<JsonProperty("attachments")>]
         Attachments: Attachment array
-
+        *)
         /// <summary>any embedded content</summary>
         [<JsonProperty("embeds")>]
         Embeds: Embed array
-
+        (*
         /// <summary>reactions to the message</summary>
         [<JsonProperty("reactions", NullValueHandling = NullValueHandling.Ignore)>]
         Reactions: Reaction array option
@@ -84,7 +84,7 @@ type Message =
 
         /// <summary>type of message</summary>
         [<JsonProperty("type")>]
-        Type: int
+        Type: MessageType
         (*
         /// <summary>sent with Rich Presence-related chat embeds</summary>
         [<JsonProperty("activity", NullValueHandling = NullValueHandling.Ignore)>]

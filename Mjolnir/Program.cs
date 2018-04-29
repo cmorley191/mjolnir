@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.Http;
+using Discord.Structures;
 using DotNetEnv;
 using MjolnirCore;
 using MjolnirCore.Extensions;
@@ -29,19 +31,45 @@ namespace Mjolnir {
             Console.WriteLine($"Accessible guilds: {guilds.Select(g => g.Name).ToSequenceString()}");
 
             var guild = guilds.Single(g => g.Name == "Anime_NSFW");
-            var channels = http.GetGuildChannels(guild).Result;
-            Console.WriteLine($"{guild.Name} channels: {channels.Select(c => c.Name).SelectSome().ToSequenceString()}");
+            var channels = http.GetGuildChannels(guild).Result
+                .Where(c => c.Type == ChannelType.GuildText);
+            Console.WriteLine($"{guild.Name} text channels: {channels.Select(c => c.Name).SelectSome().ToSequenceString()}");
+            Console.WriteLine();
 
             var channel = channels.Single(c => c.Name.IsSome(n => n == "make_bot_go"));
 
-            channel.LastMessageId.IfSome(messageId => {
-                var lastMessage = http.GetMessage(channel, messageId).Result;
-                Console.WriteLine($"Latest message to {channel.Name.Value}: \n" +
-                                  $"{lastMessage.Author.Username} ({lastMessage.Timestamp}): {lastMessage.Content}\n" +
-                                  (lastMessage.EditedTimestamp.IsSome()
-                                      ? $"(Edited {lastMessage.EditedTimestamp.Value.ToString()})"
-                                      : ""));
+            channel.LastMessageId.IfSome(latestMessageId => {
+                var messagesBack = 5;
+                var latestMessage = http.GetMessage(channel.Id, latestMessageId).Result;
+                var latestMessages =
+                    http.GetMessages(channel.Id, limit: messagesBack - 1, beforeMessage: latestMessageId).Result
+                        .Append(latestMessage)
+                        .OrderBy(m => m.Timestamp);
+
+                Console.WriteLine($"Latest {messagesBack} messages to {channel.Name.Value}:");
+
+                foreach (Message m in latestMessages) {
+                    var str = $"{m.Author.Username} ({m.Timestamp})";
+                    if (m.Type == MessageType.Default) {
+                        if (m.Content != "")
+                            str += $":\n\t{m.Content}";
+                        foreach (Embed e in m.Embeds) {
+                            str += $"\n\t{e.Title.Default("")} {e.Type.Map(t => ": " + t).Default("")}";
+                            e.Fields.IfSome(fields => {
+                                foreach (EmbedField f in fields)
+                                    str += $"\n\t\t{f.Name} : {f.Value}";
+                            });
+                        }
+                    } else
+                        str += $" {Regex.Replace(m.Type.ToString(), "(?<=[^\\s])[A-Z]", " $0")}";
+                    if (m.EditedTimestamp.IsSome())
+                        str += $" (edited {m.EditedTimestamp.Value}";
+                    str += "\n";
+
+                    Console.WriteLine(str);
+                }
             });
+
             Console.ReadKey();
         }
     }
