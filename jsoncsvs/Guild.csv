@@ -10,13 +10,13 @@ afk_channel_id,?snowflake,id of afk channel
 afk_timeout,integer,afk timeout in seconds
 embed_enabled?,bool,is this guild embeddable (e.g. widget)
 embed_channel_id?,snowflake,id of embedded channel
-verification_level,integer,verification level required for the guild
-default_message_notifications,integer,default message notifications level
-explicit_content_filter,integer,explicit content filter level
+verification_level,verification level object,verification level required for the guild
+default_message_notifications,message notification level object,default message notifications level
+explicit_content_filter,explicit content filter level object,explicit content filter level
 roles,array of role objects,roles in the guild
 emojis,array of emoji objects,custom guild emojis
 features,array of strings,enabled guild features
-mfa_level,integer,required MFA level for the guild
+mfa_level,MFA Level object,required MFA level for the guild
 application_id,?snowflake,application id of the guild creator if it is bot-created
 widget_enabled?,bool,whether or not the server widget is enabled
 widget_channel_id?,snowflake,the channel id for the server widget

@@ -6,6 +6,13 @@ open Newtonsoft.Json.Linq
 open Newtonsoft.Json.FSharp
 open Mjolnir.Core
 
+type ChannelType =
+    | GuildText = 0
+    | DM = 1
+    | GuildVoice = 2
+    | GroupDM = 3
+    | GuildCategory = 4
+
 type Channel =
     {
         /// <summary>the id of this channel</summary>
@@ -14,7 +21,7 @@ type Channel =
 
         /// <summary>the type of channel</summary>
         [<JsonProperty("type")>]
-        Type: int
+        Type: ChannelType
 
         /// <summary>the id of the guild</summary>
         [<JsonProperty("guild_id", NullValueHandling = NullValueHandling.Ignore)>]

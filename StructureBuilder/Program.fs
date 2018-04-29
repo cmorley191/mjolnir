@@ -98,7 +98,7 @@ let rec main args =
     let fname = 
         Console.WriteLine "Enter the structure name: "
         let input = Console.ReadLine()
-        if input = "exit" then
+        if input = "exit" || input = "quit" then
             exit 0
         else
             Path.Combine("..", "..", "..", "..", "jsoncsvs", input + if input.EndsWith(".csv") then "" else ".csv")
@@ -114,6 +114,7 @@ let rec main args =
         |> Seq.map (fun row ->
             row.Split(",")
             |> Array.map (fun x -> Regex.Replace(x, "\\s", " "))
+            |> Array.map (fun x -> Regex.Replace(x, "\"\"", "\""))
             |> (fun parts -> [ parts.[0]; parts.[1]; parts |> Seq.skip 2 |> String.concat "," ])
             |> Seq.map (fun s -> if s.StartsWith("\"") && s.EndsWith("\"") then s.Substring(1, s.Length - 2) else s)
             |> Seq.toList

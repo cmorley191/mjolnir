@@ -6,6 +6,31 @@ open Newtonsoft.Json.Linq
 open Newtonsoft.Json.FSharp
 open Mjolnir.Core
 
+type VerificationLevel =
+    /// <summary>unrestricted</summary>
+    | None = 0
+    /// <summary>must have verified email on account</summary>
+    | Low = 1
+    /// <summary>must be registered on Discord for longer than 5 minutes</summary>
+    | Medium = 2
+    /// <summary>(╯°□°）╯︵ ┻━┻ - must be a member of the server for longer than 10 minutes</summary>
+    | High = 3
+    /// <summary>┻━┻ミヽ(ಠ益ಠ)ﾉ彡┻━┻ - must have a verified phone number</summary>
+    | VeryHigh = 4
+
+type MessageNotificationLevel =
+    | AllMessages = 0
+    | OnlyMentions = 1
+
+type ExplicitContentFilterLevel =
+    | Disabled = 0
+    | MembersWithoutRoles = 1
+    | AllMembers = 2
+
+type MFALevel =
+    | None = 0
+    | Elevated = 1
+
 type Guild =
     {
         /// <summary>guild id</summary>
@@ -58,15 +83,15 @@ type Guild =
 
         /// <summary>verification level required for the guild</summary>
         [<JsonProperty("verification_level")>]
-        VerificationLevel: int
+        VerificationLevel: VerificationLevel
 
         /// <summary>default message notifications level</summary>
         [<JsonProperty("default_message_notifications")>]
-        DefaultMessageNotifications: int
+        DefaultMessageNotifications: MessageNotificationLevel
 
         /// <summary>explicit content filter level</summary>
         [<JsonProperty("explicit_content_filter")>]
-        ExplicitContentFilter: int
+        ExplicitContentFilter: ExplicitContentFilterLevel
 
         /// <summary>roles in the guild</summary>
         [<JsonProperty("roles")>]
@@ -82,7 +107,7 @@ type Guild =
 
         /// <summary>required MFA level for the guild</summary>
         [<JsonProperty("mfa_level")>]
-        MfaLevel: int
+        MfaLevel: MFALevel
 
         /// <summary>application id of the guild creator if it is bot-created</summary>
         [<JsonProperty("application_id")>]

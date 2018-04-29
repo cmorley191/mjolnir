@@ -1,5 +1,5 @@
 ﻿id,snowflake,the id of this channel
-type,integer,the type of channel
+type,channel type object,the type of channel
 guild_id?,snowflake,the id of the guild
 position?,integer,sorting position of the channel
 permission_overwrites?,array of overwrite objects,explicit permission overwrites for members and roles

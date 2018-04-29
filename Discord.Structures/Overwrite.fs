@@ -12,7 +12,7 @@ type Overwrite =
         [<JsonProperty("id")>]
         Id: Snowflake
 
-        /// <summary>either ""role"" or ""member""</summary>
+        /// <summary>either "role" or "member"</summary>
         [<JsonProperty("type")>]
         Type: string
 
