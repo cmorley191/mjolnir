@@ -2,11 +2,10 @@
 using System.IO;
 using System.Linq;
 using Discord;
+using Discord.Http;
 using DotNetEnv;
 using MjolnirCore;
 using MjolnirCore.Extensions;
-using static Discord.Structures.Channel;
-using static Discord.Structures.Message;
 
 namespace Mjolnir {
     internal class Program {
