@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord.Structures;
+using System.Collections.Generic;
 
 namespace Discord {
     public class HttpBotInterface {
@@ -26,13 +27,11 @@ namespace Discord {
 
         public async Task<string> MakeRequest(HttpMethod method = null, string resource = "") {
             method = method ?? HttpMethod.Get;
-
             var message = new HttpRequestMessage(method, new Uri(baseUrl, resource));
             message.Headers.Authorization = new AuthenticationHeaderValue("Bot", authorizationToken);
 
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             message.Headers.Add("User-Agent", $"DiscordBot (https://github.com/cmorley191/mjolnir, {version})");
-
             var response = await Client.SendAsync(message);
             var responseString = await response.Content.ReadAsStringAsync();
 
@@ -41,6 +40,12 @@ namespace Discord {
 
             return responseString;
         }
+
+        public string queryBuilder(string uri, List<string> queryParams) {
+            if (queryParams.Count <= 0) return uri;
+            return uri + "?" + string.Join('&', queryParams);
+        }
+
 
         public async Task<Guild> GetGuild(long id) => Guild.Deserialize(await MakeRequest(HttpMethod.Get, $"guilds/{id}"));
         public async Task<Guild[]> GetAccessibleGuilds() => General.DeserializeMany<Guild>(await MakeRequest(HttpMethod.Get, "users/@me/guilds"));
@@ -51,6 +56,25 @@ namespace Discord {
 
         public async Task<Message> GetMessage(long channelId, long messageId) => Message.Deserialize(await MakeRequest(HttpMethod.Get, $"channels/{channelId}/messages/{messageId}"));
         public Task<Message> GetMessage(Channel channel, long messageId) => GetMessage(channel.Id, messageId);
+        public async Task<Message[]> GetMessages(long channelId, int limit = -1, long aroundMessage = -1, long beforeMessage = -1, long afterMessage = -1) {
+            var baseUri = $"channels/{channelId}/messages";
+            List<string> queryParams = new List<string>();
+
+            if (limit >= 0) queryParams.Add($"limit={limit}");
+
+            //These three are Mutually Exclusive
+            if (aroundMessage >= 0) {
+                queryParams.Add($"around={aroundMessage}");
+            } else if (beforeMessage >= 0) {
+                queryParams.Add($"before={beforeMessage}");
+            } else if (afterMessage >= 0) {
+                queryParams.Add($"after={afterMessage}");
+            }
+
+            Console.WriteLine(queryBuilder(baseUri, queryParams));
+
+            return General.DeserializeMany<Message>(await MakeRequest(HttpMethod.Get, queryBuilder(baseUri, queryParams)));
+        }
 
         public async Task<User> GetUser(long id) => User.Deserialize(await MakeRequest(HttpMethod.Get, $"users/{id}"));
     }
