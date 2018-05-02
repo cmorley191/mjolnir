@@ -10,6 +10,7 @@ using Discord.Structures;
 using DotNetEnv;
 using MjolnirCore;
 using MjolnirCore.Extensions;
+using System.Reflection;
 
 namespace Mjolnir {
     internal class Program {
@@ -29,6 +30,22 @@ namespace Mjolnir {
 
 
             Console.WriteLine("SIGTERM RECIEVED, SHUTTING DOWN GRACEFULLY!");
+        }
+
+        private static void commandDemo() {
+            var http = new HttpBotInterface();
+
+            var guilds = http.GetAccessibleGuilds().Result;
+            var guild = guilds.Single(g => g.Name == "Anime_NSFW");
+            var channels = http.GetGuildChannels(guild).Result
+                .Where(c => c.Type == ChannelType.GuildText);
+            var channel = channels.Single(c => c.Name.IsSome(n => n == "make_bot_go"));
+
+            var command = new CommandInterface(http, channel.Id);
+            var commands = new Commands(http);
+            command.AddListeners(commands);
+
+            Console.ReadKey();
         }
 
         private static void httpDemo() {
