@@ -43,9 +43,10 @@ namespace Discord.Http {
 
         private string emojiDescriptor(Emoji emoji) => emoji.Id.Match(some: id => $":{emoji.Name}:{id}", none: () => emoji.Name);
 
-        public Task CreateReaction(Message message, Emoji emoji) => CreateReaction(message.ChannelId, message.Id, emojiDescriptor(emoji));
-        public async Task CreateReaction(long channelId, long messageId, string emojiId) =>
-            await MakeRequest(HttpMethod.Put, $"channels/{channelId}/messages/{messageId}/reactions/{emojiId}/@me");
+        public Task CreateReaction(Message message, Emoji emoji) => CreateReaction(message, emojiDescriptor(emoji));
+        public Task CreateReaction(Message message, string emojiDescriptor) => CreateReaction(message.ChannelId, message.Id, emojiDescriptor);
+        public async Task CreateReaction(long channelId, long messageId, string emojiDescriptor) =>
+            await MakeRequest(HttpMethod.Put, $"channels/{channelId}/messages/{messageId}/reactions/{emojiDescriptor}/@me");
 
         public Task DeleteReaction(Message message, Emoji emoji) => DeleteReaction(message.ChannelId, message.Id, emojiDescriptor(emoji));
         public async Task DeleteReaction(long channelId, long messageId, string emojiId) =>

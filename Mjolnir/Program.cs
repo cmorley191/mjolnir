@@ -15,7 +15,7 @@ namespace Mjolnir {
         private static void Main(string[] args) {
             Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
 
-            httpDemo();
+            commandDemo();
         }
 
         private static void gatewayDemo() {
@@ -23,6 +23,22 @@ namespace Mjolnir {
             gate.Connect();
 
             Console.Write("Press Enter to Terminate: ");
+            Console.ReadKey();
+        }
+
+        private static void commandDemo() {
+            var http = new HttpBotInterface();
+
+            var guilds = http.GetAccessibleGuilds().Result;
+            var guild = guilds.Single(g => g.Name == "Anime_NSFW");
+            var channels = http.GetGuildChannels(guild).Result
+                .Where(c => c.Type == ChannelType.GuildText);
+            var channel = channels.Single(c => c.Name.IsSome(n => n == "make_bot_go"));
+
+            var command = new CommandInterface(http, channel.Id);
+            command.AddListener("hello", async message => await http.CreateReaction(message, "👋"));
+            command.AddListener(CommandInterface.UnknownCommandKey, async message => await http.CreateReaction(message, "❓"));
+
             Console.ReadKey();
         }
 
