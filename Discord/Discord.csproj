@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Discord.Structures\Discord.Structures.fsproj" />
+    <ProjectReference Include="..\MjolnirCore\MjolnirCore.csproj" />
   </ItemGroup>
 
 </Project>

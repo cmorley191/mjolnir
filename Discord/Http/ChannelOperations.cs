@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using MjolnirCore;
 
 namespace Discord.Http {
     public partial class HttpBotInterface {
@@ -40,8 +41,13 @@ namespace Discord.Http {
             return General.DeserializeMany<Message>(await MakeRequest(HttpMethod.Get, $"channels/{channelId}/messages", queryParameters));
         }
 
+        private string emojiDescriptor(Emoji emoji) => emoji.Id.Match(some: id => $":{emoji.Name}:{id}", none: () => emoji.Name);
+
+        public Task CreateReaction(Message message, Emoji emoji) => CreateReaction(message.ChannelId, message.Id, emojiDescriptor(emoji));
         public async Task CreateReaction(long channelId, long messageId, string emojiId) =>
             await MakeRequest(HttpMethod.Put, $"channels/{channelId}/messages/{messageId}/reactions/{emojiId}/@me");
+
+        public Task DeleteReaction(Message message, Emoji emoji) => DeleteReaction(message.ChannelId, message.Id, emojiDescriptor(emoji));
         public async Task DeleteReaction(long channelId, long messageId, string emojiId) =>
             await MakeRequest(HttpMethod.Delete, $"channels/{channelId}/messages/{messageId}/reactions/{emojiId}/@me");
     }

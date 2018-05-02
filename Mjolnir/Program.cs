@@ -75,11 +75,10 @@ namespace Mjolnir {
                 Console.WriteLine("Inverting reactions to latest message.");
                 latestMessage.Reactions.IfSome(reactions => {
                     foreach (var reaction in reactions) {
-                        var emojiId = (reaction.Emoji.Id.IsSome()) ? reaction.Emoji.Id.Value.ToString() : reaction.Emoji.Name;
                         if (reaction.Me) {
-                            http.DeleteReaction(latestMessage.ChannelId, latestMessage.Id, emojiId).Wait();
+                            http.DeleteReaction(latestMessage, reaction.Emoji).Wait();
                         } else {
-                            http.CreateReaction(latestMessage.ChannelId, latestMessage.Id, emojiId).Wait();
+                            http.CreateReaction(latestMessage, reaction.Emoji).Wait();
                         }
                         Thread.Sleep(1000);
                     }
