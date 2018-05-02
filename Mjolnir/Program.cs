@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Http;
 using Discord.Structures;
@@ -15,15 +16,19 @@ namespace Mjolnir {
         private static void Main(string[] args) {
             Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
 
-            httpDemo();
+            gatewayDemo();
         }
 
         private static void gatewayDemo() {
             var gate = new GatewayClient();
-            gate.Connect();
-
-            Console.Write("Press Enter to Terminate: ");
+            Task.Run(() => gate.TryConnect());
+                
+            Console.WriteLine("DISCORD GATEWAY SERVICE!");
+            Console.WriteLine("Press Enter to Terminate: \n\n");
             Console.ReadKey();
+
+
+            Console.WriteLine("SIGTERM RECIEVED, SHUTTING DOWN GRACEFULLY!");
         }
 
         private static void httpDemo() {

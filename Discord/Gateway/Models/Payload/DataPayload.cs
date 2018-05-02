@@ -1,3 +1,3 @@
-﻿namespace Discord.Gateway.Models {
+﻿namespace Discord.Gateway.Models.Payload {
     internal interface DataPayload { }
 }
