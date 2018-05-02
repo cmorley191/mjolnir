@@ -9,13 +9,14 @@ using Discord.Structures;
 using DotNetEnv;
 using MjolnirCore;
 using MjolnirCore.Extensions;
+using System.Reflection;
 
 namespace Mjolnir {
     internal class Program {
         private static void Main(string[] args) {
-            Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
+            //Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
 
-            httpDemo();
+            commandsDemo();
         }
 
         private static void gatewayDemo() {
@@ -86,6 +87,23 @@ namespace Mjolnir {
                 Console.WriteLine("Done");
             });
 
+            Console.ReadKey();
+        }
+
+        private static void commandsDemo() {
+            var obj = new Commands();
+            Type objtype = (new Commands()).GetType();
+            var methods = objtype.GetMethods();
+            foreach (MethodInfo p in methods) {
+                // for every property loop through all attributes
+                foreach (Attribute a in p.GetCustomAttributes(true)) {
+                    Console.WriteLine(a.ToString());
+                    if (a.ToString().Contains("Help")) {
+
+                        p.Invoke(obj, new object[] { null });
+                    }
+                }
+            }
             Console.ReadKey();
         }
     }
