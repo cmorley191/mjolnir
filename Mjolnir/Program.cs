@@ -14,7 +14,7 @@ using System.Reflection;
 namespace Mjolnir {
     internal class Program {
         private static void Main(string[] args) {
-            //Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
+            Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
 
             commandDemo();
         }
@@ -37,8 +37,8 @@ namespace Mjolnir {
             var channel = channels.Single(c => c.Name.IsSome(n => n == "make_bot_go"));
 
             var command = new CommandInterface(http, channel.Id);
-            command.AddListener("hello", async message => await http.CreateReaction(message, "👋"));
-            command.AddListener(CommandInterface.UnknownCommandKey, async message => await http.CreateReaction(message, "❓"));
+            var commands = new Commands(http);
+            command.AddListeners(commands);
 
             Console.ReadKey();
         }
@@ -103,23 +103,6 @@ namespace Mjolnir {
                 Console.WriteLine("Done");
             });
 
-            Console.ReadKey();
-        }
-
-        private static void commandsDemo() {
-            var obj = new Commands();
-            Type objtype = (new Commands()).GetType();
-            var methods = objtype.GetMethods();
-            foreach (MethodInfo p in methods) {
-                // for every property loop through all attributes
-                foreach (Attribute a in p.GetCustomAttributes(true)) {
-                    Console.WriteLine(a.ToString());
-                    if (a.ToString().Contains("Help")) {
-
-                        p.Invoke(obj, new object[] { null });
-    }
-                }
-            }
             Console.ReadKey();
         }
     }

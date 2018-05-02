@@ -4,11 +4,14 @@ using System.Text;
 using MjolnirCore.Extensions;
 using System.Linq;
 using Discord.Structures;
+using Discord.Http;
+using System.Threading.Tasks;
 
 namespace Mjolnir {
     [System.AttributeUsage(System.AttributeTargets.Method)]
     public class CommandAttr : System.Attribute {
         private string[] names;
+        public string[] Names => names.ToArray();
 
         public CommandAttr(params string[] names) {
             this.names = names;
@@ -21,15 +24,30 @@ namespace Mjolnir {
 
     public partial class Commands {
 
-        [CommandAttr("Hello")]
-        public void HelloWorld(Message message) {
-            Console.WriteLine("Hello World");
+        private HttpBotInterface http;
+
+        public Commands(HttpBotInterface http) {
+            this.http = http;
         }
 
+        [CommandAttr("Hello")]
+        public async Task HelloWorld(Message message) {
+            Console.WriteLine("Hello World");
+            await http.CreateReaction(message, "👋");
+        }
+
+        [CommandAttr(CommandInterface.UnknownCommandKey)]
+        public async Task UnknownCommand(Message message) {
+            Console.WriteLine("Hello World");
+            await http.CreateReaction(message, "❓");
+        }
 
         [CommandAttr("Help")]
-        public void CommandList(Message message) {
-            Console.WriteLine((new Commands()).GetType().GetMethods().Where(m => m.GetCustomAttributes(true).Length != 0).Select(m => m.Name).ToSequenceString());
+        public async Task CommandList(Message message) {
+            Console.WriteLine(
+                this.GetType().GetMethods()
+                .Where(m => m.GetCustomAttributes(true).Length != 0)
+                .Select(m => m.Name).ToSequenceString());
         }
     }
 }

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using Discord.Structures;
+using System.Reflection;
 
 namespace Mjolnir {
     public class CommandInterface {
@@ -25,13 +26,29 @@ namespace Mjolnir {
 
         public delegate Task CommandListener(Message message);
         private IDictionary<string, IList<CommandListener>> Listeners = new Dictionary<string, IList<CommandListener>>();
-        public static readonly string UnknownCommandKey = "";
+        public const string UnknownCommandKey = "";
 
         public void AddListener(string command, CommandListener listener) {
+            command = command.ToLower();
             if (Listeners.ContainsKey(command))
                 Listeners[command].Add(listener);
             else
                 Listeners[command] = new List<CommandListener>() { listener };
+        }
+
+        public void AddListeners(object commandObject) {
+            Type objtype = commandObject.GetType();
+            var methods = objtype.GetMethods();
+            foreach (MethodInfo p in methods) {
+                // for every property loop through all attributes
+                foreach (Attribute a in p.GetCustomAttributes(true)) {
+                    if (a is CommandAttr) {
+                        var ca = a as CommandAttr;
+                        foreach (string name in ca.Names)
+                            AddListener(name, m => (Task)p.Invoke(commandObject, new object[] { m }));
+                    }
+                }
+            }
         }
 
         private static readonly int MESSAGE_SCAN_DELAY_MS = 10000;
@@ -60,7 +77,7 @@ namespace Mjolnir {
                                 var commandRegex = @"!([^\s]+)(.*)";
                                 if (Regex.IsMatch(newMessage.Content, commandRegex)) {
                                     var groups = Regex.Match(newMessage.Content, commandRegex).Groups;
-                                    var command = groups[1].ToString();
+                                    var command = groups[1].ToString().ToLower();
                                     var arguments = groups[2].ToString().Trim();
                                     Debug.WriteLine($"Processing {command}: {arguments}");
 
