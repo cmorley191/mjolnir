@@ -98,7 +98,7 @@ let rec main args =
     let fname = 
         Console.WriteLine "Enter the structure name: "
         let input = Console.ReadLine()
-        if input = "exit" || input = "quit" then
+        if input = "exit" || input = "quit" || input = "" then
             exit 0
         else
             Path.Combine("..", "..", "..", "..", "jsoncsvs", input + if input.EndsWith(".csv") then "" else ".csv")

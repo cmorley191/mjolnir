@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using Discord.Gateway;
 using Discord.Gateway.Models;
-using Discord.Gateway.Models.Messages;
+using Discord.Gateway.Models.Commands;
 using Discord.Gateway.Models.Payload;
 using Newtonsoft.Json;
 using NLog;
@@ -56,7 +56,12 @@ namespace Discord {
 
                 // deal with every other message
                 while (ws.State == WebSocketState.Open) {
+                    var buffer = new ArraySegment<byte>(new byte[1024]);
+                    var raw = await ws.ReceiveAsync(buffer, CancellationToken.None);
 
+                    var json = Encoding.UTF8.GetString(buffer.Array, 0, raw.Count);
+
+                    _log.Debug($"Message: {json}");
                 }
             }
         }
@@ -87,7 +92,7 @@ namespace Discord {
         }
 
         private async Task SendIdentity(WebSocket socket) {
-            var message = new IdentifyMessage {
+            var message = new IdentifyCommand {
                 Data = {
                     AuthenticationToken = authorizationToken,
                     ConnectionProperties = {
@@ -111,6 +116,7 @@ namespace Discord {
             var raw = await socket.ReceiveAsync(buffer, CancellationToken.None);
 
             var json = Encoding.UTF8.GetString(buffer.Array, 0, raw.Count);
+            _log.Debug($"Message: {json}");
             var response = JsonConvert.DeserializeObject<Response>(json);
 
             if (response.OpCode != (int)OpCodeTypes.Dispatch)

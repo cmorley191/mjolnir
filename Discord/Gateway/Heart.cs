@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using Discord.Gateway.Models;
-using Discord.Gateway.Models.Messages;
+using Discord.Gateway.Models.Commands;
 using Newtonsoft.Json;
 using NLog;
 using NLog.Fluent;
@@ -43,7 +43,7 @@ namespace Discord.Gateway {
         /// <exception cref="WebSocketException">Wrong Response Recieved</exception>
         public static async Task SendBeat() {
             // create the message
-            var message = new HeartBeatMessage {
+            var message = new HeartBeatCommand {
                 Sequence = Sequence
             };
 

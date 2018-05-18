@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Discord.Gateway.Models.Messages {
-    internal class HeartBeatMessage {
+namespace Discord.Gateway.Models.Commands {
+    internal class HeartBeatCommand {
         /// <summary>
         /// The op code
         /// </summary>

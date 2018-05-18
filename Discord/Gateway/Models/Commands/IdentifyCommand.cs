@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Discord.Gateway.Models.Messages {
-    internal class IdentifyMessage {
+namespace Discord.Gateway.Models.Commands {
+    internal class IdentifyCommand {
 
         [JsonProperty(PropertyName = "op")]
         public const int OpCode = 2;
