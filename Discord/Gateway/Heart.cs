@@ -2,6 +2,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using Discord.Gateway.Models;
 using Discord.Gateway.Models.Messages;
@@ -40,7 +41,7 @@ namespace Discord.Gateway {
         /// Sends the beat.
         /// </summary>
         /// <exception cref="WebSocketException">Wrong Response Recieved</exception>
-        public static void SendBeat() {
+        public static async Task SendBeat() {
             // create the message
             var message = new HeartBeatMessage {
                 Sequence = Sequence
@@ -51,25 +52,25 @@ namespace Discord.Gateway {
             var sendBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(sendJson));
 
             _logger.Debug("Sending Heartbeat!");
-            _socket.SendAsync(sendBuffer, WebSocketMessageType.Binary, true, CancellationToken.None).Wait();
+            await _socket.SendAsync(sendBuffer, WebSocketMessageType.Binary, true, CancellationToken.None);
 
             // recieve the response
             var recieveBuffer = new ArraySegment<byte>(new byte[1024]);
-            var raw = _socket.ReceiveAsync(recieveBuffer, CancellationToken.None).Result;
+            var raw = await _socket.ReceiveAsync(recieveBuffer, CancellationToken.None);
 
             // parse the json
             var responseJson = Encoding.UTF8.GetString(recieveBuffer.Array, 0, raw.Count);
             var response = JsonConvert.DeserializeObject<Response>(responseJson);
 
             // confirm the ack
-            if (response.OpCode != (int) OpCodeTypes.HeartbeatAck) {
+            if (response.OpCode != (int)OpCodeTypes.HeartbeatAck) {
                 var err = new WebSocketException("Wrong Response Recieved, Assuming Discord has been by aliens!");
                 _logger.Warn(err);
 
                 throw err;
             }
 
-			_logger.Debug("Heartbeat Acknowledged");
+            _logger.Debug("Heartbeat Acknowledged");
         }
 
         /// <summary>
@@ -78,7 +79,7 @@ namespace Discord.Gateway {
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="ElapsedEventArgs"/> instance containing the event data.</param>
         private static void TimerOnElapsed(object sender, ElapsedEventArgs e) {
-            SendBeat();
+            SendBeat().RunSynchronously();
         }
     }
 }

@@ -11,19 +11,21 @@ using DotNetEnv;
 using MjolnirCore;
 using MjolnirCore.Extensions;
 using System.Reflection;
+using Newtonsoft.Json;
 
 namespace Mjolnir {
     internal class Program {
         private static void Main(string[] args) {
             Env.Load(Path.Combine(EnvironmentHelper.SolutionFolderPath, ".env"));
+            JsonConvert.DefaultSettings = () => General.serializationOpts;
 
             gatewayDemo();
         }
 
         private static void gatewayDemo() {
             var gate = new GatewayClient();
-            Task.Run(() => gate.TryConnect());
-                
+            Task.Run(gate.TryConnect);
+
             Console.WriteLine("DISCORD GATEWAY SERVICE!");
             Console.WriteLine("Press Enter to Terminate: \n\n");
             Console.ReadKey();

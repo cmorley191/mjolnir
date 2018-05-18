@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Discord.Gateway.Models.Payload;
+using Discord.Structures;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -80,13 +81,12 @@ namespace Discord.Gateway.Models {
             Type t;
             if (OpTypes.ContainsKey(OpCode)) {
                 t = OpTypes[OpCode];
-            }
-            else {
+            } else {
                 var payloadTypes =
                     from type in Assembly.GetAssembly(typeof(PayloadAttribute)).GetTypes()
                     where type.IsDefined(typeof(PayloadAttribute), false)
                     where
-                        ((PayloadAttribute) Attribute.GetCustomAttribute(type, typeof(PayloadAttribute))).OpCode ==
+                        ((PayloadAttribute)Attribute.GetCustomAttribute(type, typeof(PayloadAttribute))).OpCode ==
                         OpCode
                     select type;
 
@@ -98,7 +98,7 @@ namespace Discord.Gateway.Models {
                 t = types.First();
             }
 
-            return (DataPayload) RawDataPayload.ToObject(t);
+            return (DataPayload)RawDataPayload.ToObject(t);
         }
     }
 }

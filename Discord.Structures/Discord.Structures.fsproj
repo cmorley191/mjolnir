@@ -17,6 +17,7 @@
     <Compile Include="Message.fs" />
     <Compile Include="Channel.fs" />
     <Compile Include="Guild.fs" />
+    <Compile Include="PartialGuild.fs" />
   </ItemGroup>
 
   <ItemGroup>

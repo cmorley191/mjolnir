@@ -12,7 +12,7 @@ type User =
         [<JsonProperty("id")>]
         Id: Snowflake
 
-        /// <summary>the user's username; not unique across the platform</summary>
+        /// <summary>the user's username, not unique across the platform</summary>
         [<JsonProperty("username")>]
         Username: string
 
@@ -20,13 +20,25 @@ type User =
         [<JsonProperty("discriminator")>]
         Discriminator: string
 
-        /// <summary>the user's?avatar hash</summary>
+        /// <summary>the user's avatar hash</summary>
         [<JsonProperty("avatar")>]
         Avatar: string option
 
         /// <summary>whether the user belongs to an OAuth2 application</summary>
         [<JsonProperty("bot", NullValueHandling = NullValueHandling.Ignore)>]
         Bot: bool option
+
+        /// <summary>whether the user has two factor enabled on their account</summary>
+        [<JsonProperty("mfa_enabled", NullValueHandling = NullValueHandling.Ignore)>]
+        MfaEnabled: bool option
+
+        /// <summary>whether the email on this account has been verified</summary>
+        [<JsonProperty("verified", NullValueHandling = NullValueHandling.Ignore)>]
+        Verified: bool option
+
+        /// <summary>the user's email</summary>
+        [<JsonProperty("email", NullValueHandling = NullValueHandling.Ignore)>]
+        Email: string option
 
     }
 
