@@ -15,11 +15,12 @@ using System.Collections.Generic;
 using System.Collections;
 using Newtonsoft.Json.Linq;
 using Discord.Gateway.Models.Payload.Events;
+using System.Threading.Tasks.Dataflow;
 
 namespace Discord {
     public class GatewayClient {
         public const string DefaultGateway = "wss://gateway.discord.gg/?v=6&encoding=json";
-        private const int MaxRetries = 1;
+        private const int MaxRetries = 3;
         private Logger _log = LogManager.GetCurrentClassLogger();
         private readonly string authorizationToken;
 
@@ -35,7 +36,15 @@ namespace Discord {
         /// </summary>
         public async Task TryConnect() {
             for (var i = 0; i < MaxRetries; i++)
-                await Connect();
+                try {
+                    await Connect();
+                    return;
+                } catch (Exception e) {
+                    if (i >= MaxRetries)
+                        throw e;
+                    else
+                        _log.Debug("Connection failed. Retrying...");
+                }
         }
 
         private Heart heart = null;
@@ -59,9 +68,9 @@ namespace Discord {
             var hello = (HelloPayload)response.DataPayload;
 
             // Set up messaging systems
-            Task.Run(() => SendMessagesAgent(ws));
-            var readyResponseMonitor = new SemaphoreSlim(initialCount: 0);
-            Task.Run(() => ReceiveMessagesAgent(ws, readyResponseMonitor));
+            SendMessagesAgentAsync(ws);
+            var readyResponseSource = new TaskCompletionSource<ReadyPayload>();
+            ReceiveMessagesAgentAsync(ws, readyResponseSource);
             _log.Debug("Started messaging systems.");
 
             // Send 1 Heartbeat (and continue to do so)
@@ -84,7 +93,14 @@ namespace Discord {
             _log.Debug("Sent identity.");
 
             // Receive 0 Ready
-            await readyResponseMonitor.WaitAsync();
+            var ready = await readyResponseSource.Task;
+
+            _log.Info($"Current User: {ready.CurrentUser.Username}");
+            _log.Info($"Accessible DMs: {ready.AssociatedDirectMessageChannels.Select(c => c.Name).ToSequenceString()}");
+            _log.Info($"Accessible Guilds: {ready.AssociatedGuilds.Select(g => g.Id).ToSequenceString()}");
+
+            sessionId = ready.SessionId;
+
             _log.Info($"Fully connected.");
         }
 
@@ -98,10 +114,7 @@ namespace Discord {
             /// so this can't be a constant string for applicable messages (heartbeat, resume).
             /// </summary>
             public readonly PayloadGenerator GetPayload;
-            /// <summary>
-            /// Monitored by the producer of the message to know when the message actually gets sent.
-            /// </summary>
-            public readonly SemaphoreSlim Monitor = new SemaphoreSlim(initialCount: 0);
+            public readonly TaskCompletionSource<bool> MessageSent = new TaskCompletionSource<bool>();
 
             public Message(PayloadGenerator PayloadGenerator) {
                 this.GetPayload = PayloadGenerator;
@@ -109,34 +122,21 @@ namespace Discord {
         }
 
         private int? sequenceNumber = null;
-        /// <summary>
-        /// Must lock this to use sendQueue.
-        /// </summary>
-        private object sendQueueMonitor = new object();
-        private Queue<Message> sendQueue = new Queue<Message>();
+        private BufferBlock<Message> sendQueue = new BufferBlock<Message>();
         /// <summary>
         /// Loop which sends messages that appear in the sendQueue.
         /// </summary>
         /// <param name="socket"></param>
         /// <returns></returns>
-        private async Task SendMessagesAgent(WebSocket socket) {
+        private async Task SendMessagesAgentAsync(WebSocket socket) {
             while (true) {
-                Message message = null;
-                while (message == null) {
-                    lock (sendQueueMonitor) {
-                        if (!sendQueue.Any()) {
-                            Monitor.Wait(sendQueueMonitor);
-                        } else {
-                            message = sendQueue.Dequeue();
-                        }
-                    }
-                }
-
+                var message = await sendQueue.ReceiveAsync();
                 var messageData = message.GetPayload(sequenceNumber);
                 var sendBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(messageData));
+                _log.Debug($"Sending: {messageData}");
                 await socket.SendAsync(sendBuffer, WebSocketMessageType.Binary, true, CancellationToken.None);
                 _log.Debug($"Sent: {messageData}");
-                message.Monitor.Release();
+                message.MessageSent.SetResult(true);
             }
         }
 
@@ -145,13 +145,10 @@ namespace Discord {
         /// </summary>
         /// <param name="payloadGenerator"></param>
         /// <returns></returns>
-        internal async Task SendMessage(PayloadGenerator payloadGenerator) {
+        internal Task SendMessage(PayloadGenerator payloadGenerator) {
             var message = new Message(payloadGenerator);
-            lock (sendQueueMonitor) {
-                sendQueue.Enqueue(message);
-                Monitor.Pulse(sendQueueMonitor);
-            }
-            await message.Monitor.WaitAsync();
+            sendQueue.Post(message);
+            return message.MessageSent.Task;
         }
 
         /// <summary>
@@ -176,7 +173,7 @@ namespace Discord {
                 receiveResult = await socket.ReceiveAsync(buffer, CancellationToken.None);
                 var message = Encoding.UTF8.GetString(buffer.Array, 0, receiveResult.Count);
                 messageBuilder.Append(message);
-            } while (!receiveResult.EndOfMessage && messageBuilder.ToString() != "");
+            } while (!receiveResult.EndOfMessage || messageBuilder.ToString().Trim() == "");
 
             _log.Debug($"Message: {messageBuilder.ToString()}");
 
@@ -193,11 +190,9 @@ namespace Discord {
         /// Loop which receives messages and passes them off to the appropriate destination (usually a handler).
         /// </summary>
         /// <param name="socket"></param>
-        /// <param name="readyResponseMonitor">This monitor will be pulsed when receiving a "Ready" message for the first time.</param>
+        /// <param name="readyResponseSource">Source for receiving the single Ready response to the Identify command.</param>
         /// <returns></returns>
-        private async Task ReceiveMessagesAgent(WebSocket socket, SemaphoreSlim readyResponseMonitor) {
-            var receivedReadyReponse = false;
-
+        private async Task ReceiveMessagesAgentAsync(WebSocket socket, TaskCompletionSource<ReadyPayload> readyResponseSource) {
             while (true) {
                 var response = await ReceiveMessage(socket);
                 if (response.SequenceNumber.HasValue)
@@ -206,21 +201,11 @@ namespace Discord {
                 if (response.OpCode == (int)OpCodeTypes.Dispatch) {
                     // event dispatch
                     if (response.EventName == "READY") {
-                        if (receivedReadyReponse) {
-                            throw new WebSocketException("Received duplicate 0 Ready event.");
-                        } else {
-                            var ready = (ReadyPayload)response.DataPayload;
-
-                            _log.Info($"Current User: {ready.CurrentUser.Username}");
-                            _log.Info($"Accessible DMs: {ready.AssociatedDirectMessageChannels.Select(c => c.Name).ToSequenceString()}");
-                            _log.Info($"Accessible Guilds: {ready.AssociatedGuilds.Select(g => g.Id).ToSequenceString()}");
-
-                            sessionId = ready.SessionId;
-                            readyResponseMonitor.Release();
-                        }
+                        var ready = (ReadyPayload)response.DataPayload;
+                        readyResponseSource.SetResult(ready);
                     } else if (messageHandlers.Keys.Any(k => k.name == response.EventName)) {
                         foreach (var handler in messageHandlers.Single(p => p.Key.name == response.EventName).Value)
-                            await handler.Invoke(response.DataPayload);
+                            handler.Invoke(response.DataPayload).ConfigureAwait(continueOnCapturedContext: false);
                     } else {
                         _log.Info($"Unhandled event type: {response.EventName}");
                     }

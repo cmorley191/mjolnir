@@ -46,7 +46,7 @@ namespace Discord.Gateway.Models {
         ///     The raw data payload.
         /// </value>
         [JsonProperty(PropertyName = "d")]
-        public JObject RawDataPayload { get; set; }
+        public JContainer RawDataPayload { get; set; }
 
         /// <summary>
         ///     Gets or sets the sequence number.

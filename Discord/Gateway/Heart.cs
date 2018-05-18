@@ -5,6 +5,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using System.Timers;
 using Discord.Gateway.Models;
 using Discord.Gateway.Models.Commands;
@@ -32,8 +33,7 @@ namespace Discord.Gateway {
         private bool pendingTimedBeat = false;
         private bool pendingRequestedBeat = false;
 
-        private object heartEventQueueMonitor = new object();
-        private Queue<HeartEvent> heartEventQueue = new Queue<HeartEvent>();
+        private BufferBlock<HeartEvent> heartEventQueue = new BufferBlock<HeartEvent>();
         private async Task HeartAgent(int rate) {
             var heartbeatTimer = new System.Timers.Timer {
                 Interval = rate,
@@ -48,32 +48,23 @@ namespace Discord.Gateway {
             TimeForABeat(null, null);
 
             while (true) {
-                HeartEvent? heartEvent = null;
-                while (heartEvent == null) {
-                    lock (heartEventQueueMonitor) {
-                        if (!heartEventQueue.Any()) {
-                            Monitor.Wait(heartEventQueueMonitor);
-                        } else {
-                            heartEvent = heartEventQueue.Dequeue();
-                        }
-                    }
-                }
+                var heartEvent = await heartEventQueue.ReceiveAsync();
 
-                if (heartEvent.Value == HeartEvent.AckReceived) {
+                if (heartEvent == HeartEvent.AckReceived) {
                     pendingTimedBeat = false;
                     pendingRequestedBeat = false;
                     _logger.Debug("Heartbeat Acknowledged");
                 } else if (
-                    (heartEvent.Value == HeartEvent.TimeForABeat && pendingTimedBeat)
-                    || (heartEvent.Value == HeartEvent.BeatRequestedByServer && pendingRequestedBeat)) {
+                    (heartEvent == HeartEvent.TimeForABeat && pendingTimedBeat)
+                    || (heartEvent == HeartEvent.BeatRequestedByServer && pendingRequestedBeat)) {
                     // TODO: Shutdown and reconnect
                     _logger.Debug("Heartbeat problem. Shutting down.");
-                } else if (heartEvent.Value == HeartEvent.TimeForABeat) {
-                    await Send();
+                } else if (heartEvent == HeartEvent.TimeForABeat) {
+                    await SendBeat();
                     pendingTimedBeat = true;
-                } else if (heartEvent.Value == HeartEvent.BeatRequestedByServer) {
+                } else if (heartEvent == HeartEvent.BeatRequestedByServer) {
                     heartbeatTimer.Stop();
-                    await Send();
+                    await SendBeat();
                     pendingRequestedBeat = true;
                     heartbeatTimer.Start();
                 }
@@ -81,17 +72,11 @@ namespace Discord.Gateway {
         }
 
         public void AckReceived() {
-            lock (heartEventQueueMonitor) {
-                heartEventQueue.Enqueue(HeartEvent.AckReceived);
-                Monitor.Pulse(heartEventQueueMonitor);
-            }
+            heartEventQueue.Post(HeartEvent.AckReceived);
         }
 
         public void BeatRequested() {
-            lock (heartEventQueueMonitor) {
-                heartEventQueue.Enqueue(HeartEvent.BeatRequestedByServer);
-                Monitor.Pulse(heartEventQueueMonitor);
-            }
+            heartEventQueue.Post(HeartEvent.BeatRequestedByServer);
         }
 
         /// <summary>
@@ -100,13 +85,10 @@ namespace Discord.Gateway {
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="ElapsedEventArgs"/> instance containing the event data.</param>
         private void TimeForABeat(object sender, ElapsedEventArgs e) {
-            lock (heartEventQueueMonitor) {
-                heartEventQueue.Enqueue(HeartEvent.TimeForABeat);
-                Monitor.Pulse(heartEventQueueMonitor);
-            }
+            heartEventQueue.Post(HeartEvent.TimeForABeat);
         }
 
-        private async Task Send() {
+        private async Task SendBeat() {
             _logger.Debug("Sending Heartbeat!");
             PayloadGenerator message = (sequenceNumber) => JsonConvert.SerializeObject(new HeartBeatCommand {
                 Sequence = sequenceNumber
@@ -114,6 +96,5 @@ namespace Discord.Gateway {
 
             await gateway.SendMessage(message);
         }
-
     }
 }
