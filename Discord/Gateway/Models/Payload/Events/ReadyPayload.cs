@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace Discord.Gateway.Models.Payload.Events {
-    internal class ReadyPayload : DataPayload {
+    internal class ReadyPayload {
 
         [JsonProperty(PropertyName = "v")]
         public int GatewayProtocolVersion { get; set; }

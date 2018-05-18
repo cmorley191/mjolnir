@@ -86,8 +86,7 @@ namespace Discord.Gateway.Models {
                     t = EventTypes[EventName];
                 } else {
                     var supportedEventTypes =
-                        typeof(EventType).GetFields()
-                        .Where(fi => fi.IsStatic)
+                        typeof(EventType).GetFields(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
                         .Select(fi => (EventType)fi.GetValue(null));
 
                     t = supportedEventTypes.First(ev => ev.name == this.EventName).payloadType;
