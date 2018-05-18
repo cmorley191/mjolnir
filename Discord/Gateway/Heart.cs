@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -9,68 +11,87 @@ using Discord.Gateway.Models.Commands;
 using Newtonsoft.Json;
 using NLog;
 using NLog.Fluent;
+using static Discord.GatewayClient;
 
 namespace Discord.Gateway {
     internal class Heart {
-        public static int? Sequence;
-        private static WebSocket _socket;
-        private static Logger _logger = LogManager.GetCurrentClassLogger();
+        private GatewayClient gateway;
+        private Logger _logger = LogManager.GetCurrentClassLogger();
 
-        /// <summary>
-        /// Starts the beating.
-        /// </summary>
-        /// <param name="rate">The rate.</param>
-        /// <param name="socket">The socket.</param>
-        /// <param name="sequence">The sequence.</param>
-        public static void StartBeating(int rate, WebSocket socket, int? sequence) {
-            _socket = socket;
-            Sequence = sequence;
+        public Heart(int rate, GatewayClient gateway) {
+            this.gateway = gateway;
 
-            var timer = new System.Timers.Timer {
+            Task.Run(() => HeartAgent(rate));
+        }
+
+        private enum HeartEvent {
+            TimeForABeat,
+            AckReceived,
+            BeatRequestedByServer
+        }
+        private bool pendingTimedBeat = false;
+        private bool pendingRequestedBeat = false;
+
+        private object heartEventQueueMonitor = new object();
+        private Queue<HeartEvent> heartEventQueue = new Queue<HeartEvent>();
+        private async Task HeartAgent(int rate) {
+            var heartbeatTimer = new System.Timers.Timer {
                 Interval = rate,
                 AutoReset = true
             };
 
             _logger.Info($"Starting Heartbeat with Interval={rate}");
 
-            timer.Elapsed += TimerOnElapsed;
-            timer.Start();
+            heartbeatTimer.Elapsed += TimeForABeat;
+            heartbeatTimer.Start();
+
+            TimeForABeat(null, null);
+
+            while (true) {
+                HeartEvent? heartEvent = null;
+                while (heartEvent == null) {
+                    lock (heartEventQueueMonitor) {
+                        if (!heartEventQueue.Any()) {
+                            Monitor.Wait(heartEventQueueMonitor);
+                        } else {
+                            heartEvent = heartEventQueue.Dequeue();
+                        }
+                    }
+                }
+
+                if (heartEvent.Value == HeartEvent.AckReceived) {
+                    pendingTimedBeat = false;
+                    pendingRequestedBeat = false;
+                    _logger.Debug("Heartbeat Acknowledged");
+                } else if (
+                    (heartEvent.Value == HeartEvent.TimeForABeat && pendingTimedBeat)
+                    || (heartEvent.Value == HeartEvent.BeatRequestedByServer && pendingRequestedBeat)) {
+                    // TODO: Shutdown and reconnect
+                    _logger.Debug("Heartbeat problem. Shutting down.");
+                } else if (heartEvent.Value == HeartEvent.TimeForABeat) {
+                    await Send();
+                    pendingTimedBeat = true;
+                } else if (heartEvent.Value == HeartEvent.BeatRequestedByServer) {
+                    heartbeatTimer.Stop();
+                    await Send();
+                    pendingRequestedBeat = true;
+                    heartbeatTimer.Start();
+                }
+            }
         }
 
-        /// <summary>
-        /// Sends the beat.
-        /// </summary>
-        /// <exception cref="WebSocketException">Wrong Response Recieved</exception>
-        public static async Task SendBeat() {
-            // create the message
-            var message = new HeartBeatCommand {
-                Sequence = Sequence
-            };
-
-            // send the heartbeat
-            var sendJson = JsonConvert.SerializeObject(message);
-            var sendBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(sendJson));
-
-            _logger.Debug("Sending Heartbeat!");
-            await _socket.SendAsync(sendBuffer, WebSocketMessageType.Binary, true, CancellationToken.None);
-
-            // recieve the response
-            var recieveBuffer = new ArraySegment<byte>(new byte[1024]);
-            var raw = await _socket.ReceiveAsync(recieveBuffer, CancellationToken.None);
-
-            // parse the json
-            var responseJson = Encoding.UTF8.GetString(recieveBuffer.Array, 0, raw.Count);
-            var response = JsonConvert.DeserializeObject<Response>(responseJson);
-
-            // confirm the ack
-            if (response.OpCode != (int)OpCodeTypes.HeartbeatAck) {
-                var err = new WebSocketException("Wrong Response Recieved, Assuming Discord has been by aliens!");
-                _logger.Warn(err);
-
-                throw err;
+        public void AckReceived() {
+            lock (heartEventQueueMonitor) {
+                heartEventQueue.Enqueue(HeartEvent.AckReceived);
+                Monitor.Pulse(heartEventQueueMonitor);
             }
+        }
 
-            _logger.Debug("Heartbeat Acknowledged");
+        public void BeatRequested() {
+            lock (heartEventQueueMonitor) {
+                heartEventQueue.Enqueue(HeartEvent.BeatRequestedByServer);
+                Monitor.Pulse(heartEventQueueMonitor);
+            }
         }
 
         /// <summary>
@@ -78,8 +99,21 @@ namespace Discord.Gateway {
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="ElapsedEventArgs"/> instance containing the event data.</param>
-        private static void TimerOnElapsed(object sender, ElapsedEventArgs e) {
-            SendBeat().RunSynchronously();
+        private void TimeForABeat(object sender, ElapsedEventArgs e) {
+            lock (heartEventQueueMonitor) {
+                heartEventQueue.Enqueue(HeartEvent.TimeForABeat);
+                Monitor.Pulse(heartEventQueueMonitor);
+            }
         }
+
+        private async Task Send() {
+            _logger.Debug("Sending Heartbeat!");
+            PayloadGenerator message = (sequenceNumber) => JsonConvert.SerializeObject(new HeartBeatCommand {
+                Sequence = sequenceNumber
+            });
+
+            await gateway.SendMessage(message);
+        }
+
     }
 }

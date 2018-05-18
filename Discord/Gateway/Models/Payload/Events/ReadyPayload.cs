@@ -4,9 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Discord.Gateway.Models.Payload {
-    [Payload(OpCode = (int)OpCodeTypes.Dispatch)]
-    internal class ReadyEvent : DataPayload {
+namespace Discord.Gateway.Models.Payload.Events {
+    internal class ReadyPayload : DataPayload {
 
         [JsonProperty(PropertyName = "v")]
         public int GatewayProtocolVersion { get; set; }

@@ -12,20 +12,10 @@ using Discord.Structures;
 using System.Reflection;
 
 namespace Mjolnir {
-    public class CommandInterface {
-
-        private HttpBotInterface http;
-        private long listeningChannelId;
-
-        public CommandInterface(HttpBotInterface http, long listeningChannelId) {
-            this.http = http;
-            this.listeningChannelId = listeningChannelId;
-
-            startScanThread();
-        }
+    public abstract class CommandInterface {
 
         public delegate Task CommandListener(Message message);
-        private IDictionary<string, IList<CommandListener>> Listeners = new Dictionary<string, IList<CommandListener>>();
+        protected IDictionary<string, IList<CommandListener>> Listeners = new Dictionary<string, IList<CommandListener>>();
         public const string UnknownCommandKey = "";
 
         public void AddListener(string command, CommandListener listener) {
@@ -51,58 +41,29 @@ namespace Mjolnir {
             }
         }
 
-        private static readonly int MESSAGE_SCAN_DELAY_MS = 10000;
+        protected async Task ProcessMessage(Message message) {
+            Debug.WriteLine($"Processing {message.Id}");
 
-        private void startScanThread() {
-            var latestMessageIdOption = http.GetChannel(listeningChannelId).Result.LastMessageId;
+            var commandRegex = @"!([^\s]+)(.*)";
+            if (Regex.IsMatch(message.Content, commandRegex)) {
+                var groups = Regex.Match(message.Content, commandRegex).Groups;
+                var command = groups[1].ToString().ToLower();
+                var arguments = groups[2].ToString().Trim();
+                Debug.WriteLine($"Processing {command}: {arguments}");
 
-            new Thread(async () => {
-                while (true) {
-                    if (latestMessageIdOption.IsNone()) {
-                        Debug.WriteLine($"Checking for any messages at all in {listeningChannelId}");
-                        latestMessageIdOption = (await http.GetChannel(listeningChannelId)).LastMessageId;
-                    }
-
-                    if (latestMessageIdOption.IsSome()) {
-                        Debug.WriteLine($"Checking for new messages after {latestMessageIdOption.Value}");
-                        var newMessages =
-                            (await http.GetMessages(listeningChannelId, afterMessage: latestMessageIdOption.Value))
-                            .OrderBy(message => message.Timestamp);
-
-                        if (newMessages.Any()) {
-                            Debug.WriteLine($"Processing {newMessages.Count()} new messages");
-                            foreach (var newMessage in newMessages) {
-                                Debug.WriteLine($"Processing {newMessage.Id}");
-
-                                var commandRegex = @"!([^\s]+)(.*)";
-                                if (Regex.IsMatch(newMessage.Content, commandRegex)) {
-                                    var groups = Regex.Match(newMessage.Content, commandRegex).Groups;
-                                    var command = groups[1].ToString().ToLower();
-                                    var arguments = groups[2].ToString().Trim();
-                                    Debug.WriteLine($"Processing {command}: {arguments}");
-
-                                    if (Listeners.ContainsKey(command)) {
-                                        Debug.WriteLine($"Invoking {Listeners[command].Count} listeners");
-                                        foreach (var listener in Listeners[command])
-                                            await listener.Invoke(newMessage);
-                                    } else {
-                                        Debug.WriteLine($"Unknown command");
-                                        if (Listeners.ContainsKey(UnknownCommandKey))
-                                            foreach (var listener in Listeners[UnknownCommandKey])
-                                                await listener.Invoke(newMessage);
-                                    }
-                                } else {
-                                    Debug.WriteLine($"Found a non-command message.");
-                                }
-                            }
-
-                            latestMessageIdOption = newMessages.Last().Id;
-                        }
-                    }
-
-                    Thread.Sleep(MESSAGE_SCAN_DELAY_MS);
+                if (Listeners.ContainsKey(command)) {
+                    Debug.WriteLine($"Invoking {Listeners[command].Count} listeners");
+                    foreach (var listener in Listeners[command])
+                        await listener.Invoke(message);
+                } else {
+                    Debug.WriteLine($"Unknown command");
+                    if (Listeners.ContainsKey(UnknownCommandKey))
+                        foreach (var listener in Listeners[UnknownCommandKey])
+                            await listener.Invoke(message);
                 }
-            }).Start();
+            } else {
+                Debug.WriteLine($"Found a non-command message.");
+            }
         }
     }
 }

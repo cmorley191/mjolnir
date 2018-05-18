@@ -22,11 +22,26 @@ namespace Mjolnir {
             gatewayDemo();
         }
 
+        /// <summary>
+        /// Starts a command server using the Gateway. Start this and type !hello into make_bot_go.
+        /// </summary>
         private static void gatewayDemo() {
-            var gate = new GatewayClient();
-            Task.Run(gate.TryConnect);
+            var http = new HttpBotInterface();
+            var gateway = new GatewayClient();
+            Task.Run(gateway.TryConnect);
 
             Console.WriteLine("DISCORD GATEWAY SERVICE!");
+
+            var guilds = http.GetAccessibleGuilds().Result;
+            var guild = guilds.Single(g => g.Name == "Anime_NSFW");
+            var channels = http.GetGuildChannels(guild).Result
+                .Where(c => c.Type == ChannelType.GuildText);
+            var channel = channels.Single(c => c.Name.IsSome(n => n == "make_bot_go"));
+
+            var command = new GatewayCommandInterface(gateway, channel.Id);
+            var commands = new Commands(http);
+            command.AddListeners(commands);
+
             Console.WriteLine("Press Enter to Terminate: \n\n");
             Console.ReadKey();
 
@@ -34,6 +49,9 @@ namespace Mjolnir {
             Console.WriteLine("SIGTERM RECIEVED, SHUTTING DOWN GRACEFULLY!");
         }
 
+        /// <summary>
+        /// Starts a command server using occasional Http polling.
+        /// </summary>
         private static void commandDemo() {
             var http = new HttpBotInterface();
 
@@ -43,13 +61,16 @@ namespace Mjolnir {
                 .Where(c => c.Type == ChannelType.GuildText);
             var channel = channels.Single(c => c.Name.IsSome(n => n == "make_bot_go"));
 
-            var command = new CommandInterface(http, channel.Id);
+            var command = new HttpCommandInterface(http, channel.Id);
             var commands = new Commands(http);
             command.AddListeners(commands);
 
             Console.ReadKey();
         }
 
+        /// <summary>
+        /// Inverts the bot's reactions to the latest message of make_bot_go.
+        /// </summary>
         private static void httpDemo() {
             var http = new HttpBotInterface();
             var guilds = http.GetAccessibleGuilds().Result;

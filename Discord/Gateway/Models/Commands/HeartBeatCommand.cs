@@ -14,7 +14,7 @@ namespace Discord.Gateway.Models.Commands {
         /// <value>
         /// The sequence.
         /// </value>
-        [JsonProperty(PropertyName = "d")]
+        [JsonProperty(PropertyName = "d", NullValueHandling = NullValueHandling.Include)]
         public int? Sequence { get; set; }
     }
 }

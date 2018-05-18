@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Discord.Gateway.Models.Payload;
+using Discord.Gateway.Models.Payload.Events;
 using Discord.Structures;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,12 +15,12 @@ namespace Discord.Gateway.Models {
         /// <summary>
         ///     The lazy data payload
         /// </summary>
-        private readonly Lazy<DataPayload> lazyDataPayload;
+        private readonly Lazy<object> lazyDataPayload;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Response" /> class.
         /// </summary>
-        public Response() => lazyDataPayload = new Lazy<DataPayload>(GetDataPayload);
+        public Response() => lazyDataPayload = new Lazy<object>(GetDataPayload);
 
         /// <summary>
         ///     Gets the data payload.
@@ -27,7 +28,7 @@ namespace Discord.Gateway.Models {
         /// <value>
         ///     The data payload.
         /// </value>
-        public DataPayload DataPayload => lazyDataPayload.Value;
+        public object DataPayload => lazyDataPayload.Value;
 
         /// <summary>
         ///     Gets or sets the op code.
@@ -71,34 +72,42 @@ namespace Discord.Gateway.Models {
         /// <value>
         ///     The op types.
         /// </value>
-        private static Dictionary<int, Type> OpTypes { get; } = new Dictionary<int, Type>();
+        internal static Dictionary<int, Type> OpTypes { get; } = new Dictionary<int, Type>();
+        internal static Dictionary<string, Type> EventTypes { get; } = new Dictionary<string, Type>();
 
         /// <summary>
         ///     Gets the data payload.
         /// </summary>
         /// <returns></returns>
-        private DataPayload GetDataPayload() {
+        private object GetDataPayload() {
             Type t;
-            if (OpTypes.ContainsKey(OpCode)) {
+            if (OpCode == (int)OpCodeTypes.Dispatch) {
+                if (EventTypes.ContainsKey(EventName)) {
+                    t = EventTypes[EventName];
+                } else {
+                    var supportedEventTypes =
+                        typeof(EventType).GetFields()
+                        .Where(fi => fi.IsStatic)
+                        .Select(fi => (EventType)fi.GetValue(null));
+
+                    t = supportedEventTypes.First(ev => ev.name == this.EventName).payloadType;
+                    EventTypes[EventName] = t;
+                }
+            } else if (OpTypes.ContainsKey(OpCode)) {
                 t = OpTypes[OpCode];
             } else {
-                var payloadTypes =
+                var typesOfAttribute =
                     from type in Assembly.GetAssembly(typeof(PayloadAttribute)).GetTypes()
                     where type.IsDefined(typeof(PayloadAttribute), false)
-                    where
-                        ((PayloadAttribute)Attribute.GetCustomAttribute(type, typeof(PayloadAttribute))).OpCode ==
-                        OpCode
+                    where ((PayloadAttribute)Attribute.GetCustomAttribute(type, typeof(PayloadAttribute))).OpCode == this.OpCode
                     select type;
 
-                var types = payloadTypes.ToList();
+                Debug.Assert(typesOfAttribute.Count() == 1);
 
-                Debug.Assert(types.Count == 1);
-
-
-                t = types.First();
+                t = typesOfAttribute.First();
+                OpTypes[OpCode] = t;
             }
-
-            return (DataPayload)RawDataPayload.ToObject(t);
+            return RawDataPayload.ToObject(t);
         }
     }
 }
