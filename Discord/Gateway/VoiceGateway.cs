@@ -74,17 +74,30 @@ namespace Discord.Gateway {
             token = voiceServerUpdate.VoiceConnectionToken;
 
             var endpoint = voiceServerUpdate.Endpoint;
-            if (!endpoint.StartsWith("wss://"))
-                endpoint = $"wss://{endpoint}";
             if (endpoint.EndsWith(":80"))
                 endpoint = endpoint.Substring(0, endpoint.Length - ":80".Length);
-            endpoint += "/?v=3";
 
             // Connect to the gateway
             socket = new ClientWebSocket();
-            var uri = new Uri(endpoint);
+            var uri = new Uri("wss://" + endpoint + "/?v=3");
             await socket.ConnectAsync(uri, CancellationToken.None);
-            _log.Info("Connected to a Discord voice socket.");
+            _log.Info($"Connected to a Discord voice socket: {endpoint}");
+
+            // Set up messaging systems
+            SendMessagesAgentAsync();
+            _log.Debug("Started outgoing message system.");
+
+            // Send 0 Identify
+            var identify = new VoiceIdentifyCommand {
+                Data = {
+                        SessionId = voiceStateUpdate.SessionId,
+                        UserId = voiceStateUpdate.UserId.ToString(),
+                        ServerId = voiceServerUpdate.GuildId.ToString(),
+                        VoiceConnectionToken = voiceServerUpdate.VoiceConnectionToken,
+                    }
+            };
+            await SendMessage(JsonConvert.SerializeObject(identify));
+            _log.Debug("Sent identity.");
 
             // Receive 8 Hello
             var response = await ReceiveMessage();
@@ -93,31 +106,17 @@ namespace Discord.Gateway {
             var hello = response.DeserializeDataPayload<HelloPayload>();
             _log.Debug("Received 8 Hello.");
 
-            // Set up messaging systems
-            SendMessagesAgentAsync();
             ReceiveMessagesAgentAsync();
-            _log.Debug("Started messaging systems.");
-
-            // Send 3 Heartbeat (and continue to do so)
-            heart = new VoiceGatewayHeart((int)(hello.HeartbeatInterval * 0.75), this);
-            _log.Debug("Started heartbeat.");
-
-            // Send 0 Identify
-            var identify = new VoiceIdentifyCommand {
-                Data = {
-                        SessionId = sessionId,
-                        UserId = mainGateway.CurrentUser.Id.ToString(),
-                        ServerId = voiceChannel.GuildId.Value.ToString(),
-                        VoiceConnectionToken = token,
-                    }
-            };
-            await SendMessage(JsonConvert.SerializeObject(identify));
-            _log.Debug("Sent identity.");
+            _log.Debug("Started incoming message system.");
 
             // Receive 2 Ready
             var ready = await readyResponseSource.Task;
             ssrc = ready.SSRC;
             Debug.Assert(ready.SupportedEncryptionModes.Contains("xsalsa20_poly1305"));
+
+            // Send 3 Heartbeat (and continue to do so)
+            heart = new VoiceGatewayHeart((int)(hello.HeartbeatInterval * 0.75), this);
+            _log.Debug("Started heartbeat.");
 
             // Connect UDP
             udp = new UdpClient(11000);

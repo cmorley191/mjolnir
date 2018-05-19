@@ -20,11 +20,11 @@ namespace Discord.Gateway.Models.Commands {
             [JsonProperty(PropertyName = "user_id")]
             public string UserId { get; set; }
 
-            [JsonProperty(PropertyName = "session_id")]
-            public string SessionId { get; set; }
-
             [JsonProperty(PropertyName = "token")]
             public string VoiceConnectionToken { get; set; }
+
+            [JsonProperty(PropertyName = "session_id")]
+            public string SessionId { get; set; }
         }
     }
 }

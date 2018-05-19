@@ -17,7 +17,7 @@ namespace Discord.Gateway.Models {
         public int OpCode { get; set; }
 
         [JsonProperty(PropertyName = "d")]
-        public JContainer RawDataPayload { get; set; }
+        public JToken RawDataPayload { get; set; }
 
         [JsonProperty(PropertyName = "s")]
         public int? SequenceNumber { get; set; }

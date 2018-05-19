@@ -53,6 +53,9 @@ namespace Discord.Gateway {
         }
 
         private BufferBlock<OutgoingMessage> sendQueue = new BufferBlock<OutgoingMessage>();
+
+        private static readonly UTF8Encoding messageEncoding = new UTF8Encoding();
+
         /// <summary>
         /// Loop which sends messages that appear in the sendQueue.
         /// </summary>
@@ -62,9 +65,9 @@ namespace Discord.Gateway {
             while (true) {
                 var message = await sendQueue.ReceiveAsync();
                 var messageData = message.GetPayload();
-                var sendBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(messageData));
+                var sendBuffer = messageEncoding.GetBytes(messageData);
                 //_log.Debug($"Sending: {messageData}");
-                await socket.SendAsync(sendBuffer, WebSocketMessageType.Binary, true, CancellationToken.None);
+                await socket.SendAsync(sendBuffer, WebSocketMessageType.Text, true, CancellationToken.None);
                 _log.Debug($"{this.GetType().Name} Sent: {messageData}");
                 message.MessageSent.SetResult(true);
             }
@@ -97,15 +100,16 @@ namespace Discord.Gateway {
             do {
                 receiveResult = null;
 
-                var buffer = new ArraySegment<byte>(new byte[1024]);
+                var buffer = new ArraySegment<byte>(new byte[4 * 1024]);
                 receiveResult = await socket.ReceiveAsync(buffer, CancellationToken.None);
                 var message = Encoding.UTF8.GetString(buffer.Array, 0, receiveResult.Count);
                 messageBuilder.Append(message);
             } while (!receiveResult.EndOfMessage || messageBuilder.ToString().Trim() == "");
 
-            _log.Debug($"{this.GetType().Name} Received: {messageBuilder.ToString()}");
+            var result = messageBuilder.ToString();
 
-            return JsonConvert.DeserializeObject<Response>(messageBuilder.ToString());
+            _log.Debug($"{this.GetType().Name} Received: {result}");
+            return JsonConvert.DeserializeObject<Response>(result);
         }
 
         /// <summary>
