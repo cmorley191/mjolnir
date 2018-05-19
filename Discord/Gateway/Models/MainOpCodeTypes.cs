@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace Discord.Gateway.Models {
-    enum OpCodeTypes {
+    enum MainOpCodeTypes {
         /// <summary>
         /// Dispatches an event (receive only).
         /// </summary>

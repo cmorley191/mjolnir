@@ -7,11 +7,11 @@ using System.Text;
 namespace Discord.Gateway.Models {
     public sealed class EventType {
 
-        public readonly string name;
-        public readonly Type payloadType;
+        public readonly string Name;
+        public readonly Type PayloadType;
         private EventType(string name, Type payloadType) {
-            this.name = name;
-            this.payloadType = payloadType;
+            Name = name;
+            PayloadType = payloadType;
         }
 
         internal static readonly EventType Ready = new EventType("READY", typeof(ReadyPayload));
@@ -71,6 +71,14 @@ namespace Discord.Gateway.Models {
         /// </summary>
         public static readonly EventType MessageUpdate = new EventType("MESSAGE_UPDATE", typeof(Message));
 
+        /// <summary>
+        /// Sent when someone joins/leaves/moves voice channels.
+        /// </summary>
+        public static readonly EventType VoiceStateUpdate = new EventType("VOICE_STATE_UPDATE", typeof(VoiceState));
+        /// <summary>
+        /// Sent when a guild's voice server is updated. This is sent when initially connecting to voice, and when the current voice instance fails over to a new server.
+        /// </summary>
+        public static readonly EventType VoiceServerUpdate = new EventType("VOICE_SERVER_UPDATE", typeof(VoiceServerUpdatePayload));
 
 
         // TODO: copy in the rest from https://discordapp.com/developers/docs/topics/gateway#commands-and-events

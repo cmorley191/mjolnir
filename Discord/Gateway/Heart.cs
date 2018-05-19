@@ -12,14 +12,14 @@ using Discord.Gateway.Models.Commands;
 using Newtonsoft.Json;
 using NLog;
 using NLog.Fluent;
-using static Discord.GatewayClient;
+using static Discord.Gateway.Gateway;
 
 namespace Discord.Gateway {
-    internal class Heart {
-        private GatewayClient gateway;
+    internal abstract class Heart {
+        private Gateway gateway;
         private Logger _logger = LogManager.GetCurrentClassLogger();
 
-        public Heart(int rate, GatewayClient gateway) {
+        public Heart(int rate, Gateway gateway) {
             this.gateway = gateway;
 
             Task.Run(() => HeartAgent(rate));
@@ -40,7 +40,7 @@ namespace Discord.Gateway {
                 AutoReset = true
             };
 
-            _logger.Info($"Starting Heartbeat with Interval={rate}");
+            _logger.Info($"{GetType().Name} beating with interval: {rate}ms");
 
             heartbeatTimer.Elapsed += TimeForABeat;
             heartbeatTimer.Start();
@@ -53,13 +53,14 @@ namespace Discord.Gateway {
                 if (heartEvent == HeartEvent.AckReceived) {
                     pendingTimedBeat = false;
                     pendingRequestedBeat = false;
-                    _logger.Debug("Heartbeat Acknowledged");
+                    _logger.Debug($"{GetType().Name} beat Acknowledged");
                 } else if (
                     (heartEvent == HeartEvent.TimeForABeat && pendingTimedBeat)
                     || (heartEvent == HeartEvent.BeatRequestedByServer && pendingRequestedBeat)) {
                     // TODO: Shutdown and reconnect
-                    _logger.Debug("Heartbeat problem. Shutting down.");
-                } else if (heartEvent == HeartEvent.TimeForABeat) {
+                    _logger.Debug($"{GetType().Name} beat problem. Shut down.");
+                }
+                if (heartEvent == HeartEvent.TimeForABeat) {
                     await SendBeat();
                     pendingTimedBeat = true;
                 } else if (heartEvent == HeartEvent.BeatRequestedByServer) {
@@ -89,12 +90,10 @@ namespace Discord.Gateway {
         }
 
         private async Task SendBeat() {
-            _logger.Debug("Sending Heartbeat!");
-            PayloadGenerator message = (sequenceNumber) => JsonConvert.SerializeObject(new HeartBeatCommand {
-                Sequence = sequenceNumber
-            });
-
-            await gateway.SendMessage(message);
+            _logger.Debug($"{GetType().Name} sending beat!");
+            await gateway.SendMessage(ProduceHeartbeatMessage);
         }
+
+        internal abstract string ProduceHeartbeatMessage();
     }
 }

@@ -7,7 +7,7 @@ namespace Discord.Gateway.Models.Commands {
     internal class IdentifyCommand {
 
         [JsonProperty(PropertyName = "op")]
-        public const int OpCode = 2;
+        public const int OpCode = (int)MainOpCodeTypes.Identify;
 
         [JsonProperty(PropertyName = "d")]
         public IdentifyPayload Data { get; set; } = new IdentifyPayload();

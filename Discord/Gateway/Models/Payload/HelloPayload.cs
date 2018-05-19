@@ -2,8 +2,7 @@
 using Newtonsoft.Json;
 
 namespace Discord.Gateway.Models.Payload {
-    [Payload(OpCode = 10)]
-    internal class HelloPayload : DataPayload {
+    internal class HelloPayload {
         /// <summary>
         ///     Gets or sets the heartbeat interval.
         /// </summary>

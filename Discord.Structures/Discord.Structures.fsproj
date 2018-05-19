@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Include="General.fs" />
+    <Compile Include="VoiceState.fs" />
     <Compile Include="Role.fs" />
     <Compile Include="Overwrite.fs" />
     <Compile Include="User.fs" />

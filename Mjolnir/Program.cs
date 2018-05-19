@@ -12,6 +12,7 @@ using MjolnirCore;
 using MjolnirCore.Extensions;
 using System.Reflection;
 using Newtonsoft.Json;
+using Discord.Gateway;
 
 namespace Mjolnir {
     internal class Program {
@@ -20,6 +21,36 @@ namespace Mjolnir {
             JsonConvert.DefaultSettings = () => General.serializationOpts;
 
             gatewayDemo();
+            //voiceDemo();
+
+            Console.WriteLine("Press Enter to Terminate: \n\n");
+            Console.ReadKey();
+            Console.WriteLine("SIGTERM RECIEVED, SHUTTING DOWN GRACEFULLY!");
+        }
+
+        private static void voiceDemo() {
+            Console.WriteLine("DISCORD GATEWAY SERVICE!");
+
+            Console.WriteLine("Connecting...");
+            var http = new HttpBotInterface();
+            var gateway = new MainGateway();
+            gateway.TryConnect().Wait();
+            Console.WriteLine("Connected!");
+            Console.WriteLine();
+
+
+            var guilds = http.GetAccessibleGuilds().Result;
+            var guild = guilds.Single(g => g.Name == "Anime_NSFW");
+            var channels = http.GetGuildChannels(guild).Result
+                .Where(c => c.Type == ChannelType.GuildVoice);
+            var channel = channels.Single(c => c.Name.IsSome(n => n == "mjolnir"));
+
+            Console.WriteLine("Connecting to voice.");
+            gateway.ConnectToVoice(channel).Wait();
+            Console.WriteLine("Connected!");
+            Console.WriteLine();
+
+
         }
 
         /// <summary>
@@ -27,7 +58,7 @@ namespace Mjolnir {
         /// </summary>
         private static void gatewayDemo() {
             var http = new HttpBotInterface();
-            var gateway = new GatewayClient();
+            var gateway = new MainGateway();
             Task.Run(gateway.TryConnect);
 
             Console.WriteLine("DISCORD GATEWAY SERVICE!");
@@ -38,15 +69,9 @@ namespace Mjolnir {
                 .Where(c => c.Type == ChannelType.GuildText);
             var channel = channels.Single(c => c.Name.IsSome(n => n == "make_bot_go"));
 
-            var command = new GatewayCommandInterface(gateway, channel.Id);
+            var command = new GatewayCommandInterface(gateway, 434559060415873024);
             var commands = new Commands(http);
             command.AddListeners(commands);
-
-            Console.WriteLine("Press Enter to Terminate: \n\n");
-            Console.ReadKey();
-
-
-            Console.WriteLine("SIGTERM RECIEVED, SHUTTING DOWN GRACEFULLY!");
         }
 
         /// <summary>
@@ -64,8 +89,6 @@ namespace Mjolnir {
             var command = new HttpCommandInterface(http, channel.Id);
             var commands = new Commands(http);
             command.AddListeners(commands);
-
-            Console.ReadKey();
         }
 
         /// <summary>
@@ -130,8 +153,6 @@ namespace Mjolnir {
                 });
                 Console.WriteLine("Done");
             });
-
-            Console.ReadKey();
         }
     }
 }
