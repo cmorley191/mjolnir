@@ -25,11 +25,7 @@ namespace Mjolnir {
             return "CommandAttr: " + names.ToSequenceString() + "Info: " + info;
         }
         public string namesToString() {
-            if (names.Length > 1) {
-                return $"__**{names[0]}**__ ({String.Join(",", names.Skip(1))})";
-            }
-            return $"__**{names[0]}**__";
-
+            return names.ToSequenceString();
 
         }
     }
@@ -62,7 +58,7 @@ namespace Mjolnir {
                     .Select(m => (
                         ((CommandAttr)m.GetCustomAttributes(true).Single(a => a is CommandAttr))))
                     .Where(a => !(a.Names.Contains(CommandInterface.UnknownCommandKey)))
-                    .Select(a => EmbedField.Build(a.namesToString(), a.Info))
+                    .Select(a => EmbedField.Build((a.Names.Length > 1) ? $"__**{a.Names[0]}**__ ({String.Join(",", a.Names.Skip(1))})" : $"__**{a.Names[0]}**__", a.Info))
                     .ToArray();
 
             Embed temp = Embed.Build(title: "__***List of Commands***__", fields: commands);
