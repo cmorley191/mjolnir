@@ -51,5 +51,10 @@ namespace Discord.Http {
         public Task DeleteReaction(Message message, Emoji emoji) => DeleteReaction(message.ChannelId, message.Id, emojiDescriptor(emoji));
         public async Task DeleteReaction(long channelId, long messageId, string emojiId) =>
             await MakeRequest(HttpMethod.Delete, $"channels/{channelId}/messages/{messageId}/reactions/{emojiId}/@me");
+
+        public Task CreateMessage(Message message, string data) => CreateMessage(message.ChannelId, message.Id, data);
+        public async Task CreateMessage(long channelId, long messageId, string data) =>
+            await MakeRequest(HttpMethod.Post, $"channels/{channelId}/messages", json: data);
+
     }
 }

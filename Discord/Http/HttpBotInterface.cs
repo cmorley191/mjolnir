@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Web;
 using System.Linq;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace Discord.Http {
     public partial class HttpBotInterface {
@@ -33,7 +35,7 @@ namespace Discord.Http {
             client.DefaultRequestHeaders.Add("User-Agent", $"DiscordBot (https://github.com/cmorley191/mjolnir, {version})");
         }
 
-        public async Task<string> MakeRequest(HttpMethod method, string resource, IDictionary<string, string> queryParameters = null) {
+        public async Task<string> MakeRequest(HttpMethod method, string resource, IDictionary<string, string> queryParameters = null, string json = null) {
             var uriBuilder = new UriBuilder(new Uri(baseUrl, resource));
 
             if (queryParameters != null) {
@@ -44,7 +46,12 @@ namespace Discord.Http {
                 uriBuilder.Query = uriQueryParameters.ToString();
             }
 
+
             var message = new HttpRequestMessage(method, uriBuilder.Uri);
+
+            if (json != null) {
+                message.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            }
 
             var response = await client.SendAsync(message);
             var responseString = await response.Content.ReadAsStringAsync();
@@ -54,6 +61,8 @@ namespace Discord.Http {
 
             return responseString;
         }
+
+
 
         private IDictionary<string, string> collectQueryParameters<TKey, TValue>(params (TKey, TValue)[] entries) =>
             entries

@@ -13,12 +13,15 @@ namespace Mjolnir {
         private string[] names;
         public string[] Names => names.ToArray();
 
-        public CommandAttr(params string[] names) {
+        public CommandAttr(string[] names) {
             this.names = names;
         }
 
         override public string ToString() {
             return "CommandAttr: " + names.ToSequenceString();
+        }
+        public string namesToString() {
+            return names.ToSequenceString();
         }
     }
 
@@ -44,10 +47,13 @@ namespace Mjolnir {
 
         [CommandAttr("Help")]
         public async Task CommandList(Message message) {
-            Console.WriteLine(
-                this.GetType().GetMethods()
-                .Where(m => m.GetCustomAttributes(true).Length != 0)
-                .Select(m => m.Name).ToSequenceString());
+            var test = this.GetType().GetMethods()
+                    .Where(m => m.GetCustomAttributes(true).Length != 0)
+                    .Select(m => (m.Name,
+                    ((CommandAttr)m.GetCustomAttributes(true).Single(a => a is CommandAttr)).namesToString()))
+                    .ToSequenceString();
+
+            await http.CreateMessage(message, test);
         }
     }
 }
