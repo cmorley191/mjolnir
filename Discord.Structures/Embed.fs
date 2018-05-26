@@ -5,10 +5,13 @@ open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json.FSharp
 open Mjolnir.Core
+open System.Runtime.InteropServices
+
 
 type Embed =
     {
         /// <summary>title of embed</summary>
+    
         [<JsonProperty("title", NullValueHandling = NullValueHandling.Ignore)>]
         Title: string option
 
@@ -64,3 +67,21 @@ type Embed =
 
     static member Deserialize str = JsonConvert.DeserializeObject<Embed>(str, General.serializationOpts)
     member this.Serialize () = JsonConvert.SerializeObject(this, General.serializationOpts)
+
+
+    static member Build([<Optional;DefaultParameterValue("")>] title: string,
+                        [<Optional;DefaultParameterValue("")>] typ: string ,
+                        [<Optional;DefaultParameterValue("")>] description: string ,
+                        [<Optional;DefaultParameterValue("")>] url: string ,
+                        [<Optional;DefaultParameterValue(null:DateTime array)>] timestamp: DateTime array ,
+                        [<Optional;DefaultParameterValue(-1)>] color: int ,
+                        [<Optional;DefaultParameterValue(null: EmbedField array)>] fields: EmbedField array ) =
+        {
+            Title = if title = "" then None else Some(title)
+            Type = if typ = "" then None else Some(typ)
+            Description = if description = "" then None else Some(description)
+            Url = if url = "" then None else Some(url)
+            Timestamp = if timestamp = null then None else Some(timestamp.[0])
+            Color = if color = -1 then None else Some(color)
+            Fields = if fields = null then None else Some(fields)
+        }

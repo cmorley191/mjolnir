@@ -13,15 +13,24 @@ namespace Mjolnir {
         private string[] names;
         public string[] Names => names.ToArray();
 
-        public CommandAttr(string[] names) {
+        private string info;
+        public string Info => info;
+
+        public CommandAttr(string info, params string[] names) {
             this.names = names;
+            this.info = info;
         }
 
         override public string ToString() {
-            return "CommandAttr: " + names.ToSequenceString();
+            return "CommandAttr: " + names.ToSequenceString() + "Info: " + info;
         }
         public string namesToString() {
-            return names.ToSequenceString();
+            if (names.Length > 1) {
+                return $"__**{names[0]}**__ ({String.Join(",", names.Skip(1))})";
+            }
+            return $"__**{names[0]}**__";
+
+
         }
     }
 
@@ -33,27 +42,32 @@ namespace Mjolnir {
             this.http = http;
         }
 
-        [CommandAttr("Hello")]
+        [CommandAttr("Waves Hello", "Hello")]
         public async Task HelloWorld(Message message) {
             Console.WriteLine("Hello World");
             await http.CreateReaction(message, "👋");
         }
 
-        [CommandAttr(CommandInterface.UnknownCommandKey)]
+        [CommandAttr("Unknown Command", CommandInterface.UnknownCommandKey)]
         public async Task UnknownCommand(Message message) {
             Console.WriteLine("Hello World");
             await http.CreateReaction(message, "❓");
         }
 
-        [CommandAttr("Help")]
+        [CommandAttr("Lists commands", "Help", "List")]
         public async Task CommandList(Message message) {
-            var test = this.GetType().GetMethods()
-                    .Where(m => m.GetCustomAttributes(true).Length != 0)
-                    .Select(m => (m.Name,
-                    ((CommandAttr)m.GetCustomAttributes(true).Single(a => a is CommandAttr)).namesToString()))
-                    .ToSequenceString();
 
-            await http.CreateMessage(message, test);
+            EmbedField[] commands = this.GetType().GetMethods()
+                    .Where(m => m.GetCustomAttributes(true).Length != 0)
+                    .Select(m => (
+                        ((CommandAttr)m.GetCustomAttributes(true).Single(a => a is CommandAttr))))
+                    .Where(a => !(a.Names.Contains(CommandInterface.UnknownCommandKey)))
+                    .Select(a => EmbedField.Build(a.namesToString(), a.Info))
+                    .ToArray();
+
+            Embed temp = Embed.Build(title: "__***List of Commands***__", fields: commands);
+
+            await http.CreateMessage(message, $"{{\"content\": \"\",\"embed\":{temp.Serialize()} }}");
         }
     }
 }

@@ -5,6 +5,7 @@ open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json.FSharp
 open Mjolnir.Core
+open System.Runtime.InteropServices
 
 type EmbedField =
     {
@@ -24,3 +25,11 @@ type EmbedField =
 
     static member Deserialize str = JsonConvert.DeserializeObject<EmbedField>(str, General.serializationOpts)
     member this.Serialize () = JsonConvert.SerializeObject(this, General.serializationOpts)
+
+    static member Build(name: string, value: string ,
+                        [<Optional;DefaultParameterValue(false)>] inlin: bool) =
+        {
+            Name = name
+            Value = value
+            Inline = if inlin then None else Some(inlin)
+        }
