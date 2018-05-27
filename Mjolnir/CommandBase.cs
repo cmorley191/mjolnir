@@ -63,7 +63,7 @@ namespace Mjolnir {
                     .ToArray();
 
             Embed temp = Embed.Build(title: "__***List of Commands***__", fields: commands);
-
+            Console.WriteLine(temp.Serialize());
             await http.CreateMessage(message, Outbound_Message.Build(embed: temp).Serialize());
         }
         [CommandAttr("Makes the bot speak", "say")]
