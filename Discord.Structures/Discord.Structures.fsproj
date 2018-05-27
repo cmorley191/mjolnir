@@ -16,6 +16,7 @@
     <Compile Include="Embed.fs" />
     <Compile Include="Attachment.fs" />
     <Compile Include="Message.fs" />
+    <Compile Include="Outbound_Message.fs" />
     <Compile Include="Channel.fs" />
     <Compile Include="Guild.fs" />
     <Compile Include="PartialGuild.fs" />

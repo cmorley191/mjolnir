@@ -73,7 +73,7 @@ type Embed =
                         [<Optional;DefaultParameterValue("")>] typ: string ,
                         [<Optional;DefaultParameterValue("")>] description: string ,
                         [<Optional;DefaultParameterValue("")>] url: string ,
-                        [<Optional;DefaultParameterValue(null:DateTime array)>] timestamp: DateTime array ,
+                        [<Optional;>] timestamp: DateTime,
                         [<Optional;DefaultParameterValue(-1)>] color: int ,
                         [<Optional;DefaultParameterValue(null: EmbedField array)>] fields: EmbedField array ) =
         {
@@ -81,7 +81,7 @@ type Embed =
             Type = if typ = "" then None else Some(typ)
             Description = if description = "" then None else Some(description)
             Url = if url = "" then None else Some(url)
-            Timestamp = if timestamp = null then None else Some(timestamp.[0])
+            Timestamp = if box timestamp = null then None else Some(timestamp)
             Color = if color = -1 then None else Some(color)
             Fields = if fields = null then None else Some(fields)
         }

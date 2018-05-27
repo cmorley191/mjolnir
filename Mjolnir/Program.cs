@@ -23,6 +23,7 @@ namespace Mjolnir {
             gatewayDemo();
             //voiceDemo();
 
+
             Console.WriteLine("Press Enter to Terminate: \n\n");
             Console.ReadKey();
             Console.WriteLine("SIGTERM RECIEVED, SHUTTING DOWN GRACEFULLY!");

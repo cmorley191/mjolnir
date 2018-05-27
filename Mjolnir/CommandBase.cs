@@ -6,6 +6,7 @@ using System.Linq;
 using Discord.Structures;
 using Discord.Http;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Mjolnir {
     [System.AttributeUsage(System.AttributeTargets.Method)]
@@ -63,7 +64,17 @@ namespace Mjolnir {
 
             Embed temp = Embed.Build(title: "__***List of Commands***__", fields: commands);
 
-            await http.CreateMessage(message, $"{{\"content\": \"\",\"embed\":{temp.Serialize()} }}");
+            await http.CreateMessage(message, Outbound_Message.Build(embed: temp).Serialize());
+        }
+        [CommandAttr("Makes the bot speak", "say")]
+        public async Task speak(Message message) {
+            var commandRegex = @"!([^\s]+)(.*)";
+            var groups = Regex.Match(message.Content, commandRegex).Groups;
+            var command = groups[1].ToString().ToLower();
+            var arguments = groups[2].ToString().Trim();
+
+
+            await http.CreateMessage(message, Outbound_Message.Build(arguments, tts: true).Serialize());
         }
     }
 }
