@@ -48,6 +48,35 @@ namespace Discord.Gateway.Models.Commands {
             // TODO: shards
 
             // TODO: presence
+
+            [JsonProperty(PropertyName = "presence")]
+            public IdentifyConnectionPresence ConnectionPresence = new IdentifyConnectionPresence();
+
+            internal class IdentifyConnectionPresence {
+
+                [JsonProperty(PropertyName = "game")]
+                public IdentifyConnectionGame ConnectionGame = new IdentifyConnectionGame();
+
+                internal class IdentifyConnectionGame {
+                    [JsonProperty(PropertyName = "name")]
+                    public string Name { get; set; }
+
+                    [JsonProperty(PropertyName = "type")]
+                    public int Type = 2;
+                }
+
+
+                [JsonProperty(PropertyName = "status")]
+                public string Status { get; set; }
+
+                [JsonProperty(PropertyName = "since")]
+                public long TimeStarted = (long)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
+
+                [JsonProperty(PropertyName = "afk")]
+                public bool AFK = false;
+            }
         }
+
     }
 }
+

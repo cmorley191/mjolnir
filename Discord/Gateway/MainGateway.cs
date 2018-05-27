@@ -16,11 +16,13 @@ using Newtonsoft.Json.Linq;
 using Discord.Gateway.Models.Payload.Events;
 using System.Threading.Tasks.Dataflow;
 using Discord.Structures;
+using Discord.Http;
 
 namespace Discord.Gateway {
+
     public class MainGateway : Gateway {
         public const string DefaultGateway = "wss://gateway.discord.gg/?v=6&encoding=json";
-
+        private HttpBotInterface http = new HttpBotInterface();
         private readonly string authorizationToken;
 
         public MainGateway(string authorizationToken = null) {
@@ -86,9 +88,17 @@ namespace Discord.Gateway {
                             DeviceName = "mjolnir",
                         },
                         AllowCompression = false,
+                        ConnectionPresence = {
+                            ConnectionGame = {
+                                Name = "\"PUNCH LINE!\" by Shokotan ♥ Denpa Gumi",
+                            },
+                            Status = "online",
+
+                        }
                     }
             };
             await SendMessage(JsonConvert.SerializeObject(identify));
+            Console.WriteLine(JsonConvert.SerializeObject(identify));
             _log.Debug("Sent identity.");
 
             // Receive 0 Ready

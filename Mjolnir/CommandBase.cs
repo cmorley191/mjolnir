@@ -63,18 +63,25 @@ namespace Mjolnir {
                     .ToArray();
 
             Embed temp = Embed.Build(title: "__***List of Commands***__", fields: commands);
-            Console.WriteLine(temp.Serialize());
             await http.CreateMessage(message, Outbound_Message.Build(embed: temp).Serialize());
         }
         [CommandAttr("Makes the bot speak", "say")]
         public async Task speak(Message message) {
             var commandRegex = @"!([^\s]+)(.*)";
             var groups = Regex.Match(message.Content, commandRegex).Groups;
-            var command = groups[1].ToString().ToLower();
             var arguments = groups[2].ToString().Trim();
 
 
             await http.CreateMessage(message, Outbound_Message.Build(arguments, tts: true).Serialize());
+        }
+
+        [CommandAttr("Change Bot name", "change")]
+        public async Task change(Message message) {
+            var commandRegex = @"!([^\s]+)(.*)";
+            var groups = Regex.Match(message.Content, commandRegex).Groups;
+            var arguments = groups[2].ToString().Trim();
+
+            Console.WriteLine(await http.Update_Self($"{{\"username\": \"{arguments}\"}}"));
         }
     }
 }
